@@ -1,10 +1,11 @@
 import os
 from flask import Blueprint, Flask, g, render_template, request, redirect, url_for, flash, session, send_from_directory, current_app, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from __init__ import UPLOAD_FOLDER
-from models import Admin, Candidato, Empresa, Curso, CursoConcluido, Vaga, Recrutamento, Relatorio, Email, Telefone, Fase
-from utils import criptografar, descriptografar, calcular_idade, formatar_data_e_hora, formatar_data, validar_documento, verificar_login, verificar_fase, verificar_tipo_usuario
-from database import banco
+# #from  __init__ import UPLOAD_FOLDER
+# from app.__init__ import UPLPAD_FOLDER
+from app.models import Admin, Candidato, Empresa, Curso, CursoConcluido, Vaga, Recrutamento, Relatorio, Email, Telefone, Fase
+from app.utils import criptografar, descriptografar, calcular_idade, formatar_data_e_hora, formatar_data, validar_documento, verificar_login, verificar_fase, verificar_tipo_usuario
+from app.database import banco
 
 geral_bp = Blueprint('geral', __name__)
 
@@ -103,7 +104,7 @@ def cadastro():
             flash('Preencha todos os campos obrigatórios.', 'erro')
             return redirect(url_for('geral.login'))
         
-        fase_atual = banco.execute_query("SELECT fase FROM fase")[0][0]
+        fase_atual = banco.execute_query("SELECT fase FROM fase")[0]['fase']
 
         if len(login) == 14 :
             if fase_atual == "Preparação":
@@ -130,6 +131,7 @@ def cadastro():
             session['nome_completo'] = nome
             session['cpf'] = login
             session['senha'] = senha
+            session['tipo']='candidato'
 
             return redirect(url_for('candidato.cadastro_candidato'))
         else:

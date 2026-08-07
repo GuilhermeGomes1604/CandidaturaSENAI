@@ -4,7 +4,7 @@ from flask import redirect, url_for, flash, session
 from cryptography.fernet import Fernet
 from validate_docbr import CPF, CNPJ
 from functools import wraps
-from app.database import banco
+from database import banco
 
 CHAVE = b'9A8Ax0ZTvvg8swCTo3z3YEL89M6u0JALtnnwHBz6z_Q='
 fernet = Fernet(CHAVE)
@@ -70,11 +70,11 @@ def verificar_login(requer_login=True):
             if requer_login:
                 if not login:
                     flash("Por favor, faça login para acessar esta página.", "aviso")
-                    return redirect(url_for('geral.login'))
+                    return redirect(url_for('login'))
             else:
                 if login:
                     flash("Você já está logado!", "info")
-                    return redirect(url_for('geral.index'))
+                    return redirect(url_for('index'))
             return f(*args, **kwargs)
         return decorated_function
     return decorator
@@ -83,28 +83,24 @@ def verificar_fase(fases_permitidas):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            fase_atual = banco.execute_query("SELECT fase FROM fase")[0]['fase']
+            fase_atual = banco.execute_query("SELECT fase FROM fase")[0][0]
             fases_validas = [fases_permitidas] if isinstance(fases_permitidas, str) else fases_permitidas
             if fase_atual not in fases_validas:
                 flash(f"Acesso negado para esta fase do sistema.", "erro")
-                return redirect(url_for('geral.index'))
+                return redirect(url_for('index'))
             return f(*args, **kwargs)
         return decorated_function
     return decorator
 
-def verificar_tipo_usuario(*tipos):
-    # Desempacota listas ou tuplas enviadas como argumento
-    permitidos = []
-    for item in tipos:
-        if isinstance(item, (list, tuple)):
-            permitidos.extend(item)
-        else:
-            permitidos.append(item)
+from functools import wraps
+from flask import session, flash, redirect, url_for
 
+def verificar_tipo_usuario(tipos_permitidos):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            if session.get('tipo') not in permitidos:
+            tipos_validos = [tipos_permitidos] if isinstance(tipos_permitidos, str) else tipos_permitidos
+            if session.get('tipo') not in tipos_validos:
                 flash(f"Você não pode acessar essa página com uma conta de {session.get('tipo')}.", "erro")
                 return redirect(url_for('index'))
             return f(*args, **kwargs)

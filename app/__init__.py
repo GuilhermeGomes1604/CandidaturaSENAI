@@ -1,7 +1,7 @@
 import os
 from flask import Flask, g, request, session
 from dotenv import load_dotenv
-from database import banco, init_db
+from .database import banco, init_db
 
 load_dotenv()
 
@@ -19,8 +19,9 @@ def create_app():
             return
 
         resultado = banco.execute_query("SELECT fase FROM fase")
+        print(resultado[0]['fase'])
         if resultado:
-            session['fase'] = resultado[0][0]
+            session['fase'] = resultado[0]['fase']
 
     @app.teardown_appcontext
     def close_connection(exception):

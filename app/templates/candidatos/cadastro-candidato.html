@@ -1,8 +1,8 @@
-{% extends 'base-login.html' %}
+{% extends 'base.html' %}
 
-{% block title %}Cadastrar Candidato{% endblock %}
+{% block title %} Cadastrar Candidato {% endblock %}
 
-{% block conteudo %}
+{% block main %}
     <div>
         <form id="form" action="{{ url_for('candidato.cadastrar_candidato') }}" method="POST">
             <label for="imagem"></label><img id="foto-de-perfil" src="{{ url_for('static', filename='img/icone_avatar_padrao.png') }}" alt="Foto de Perfil">

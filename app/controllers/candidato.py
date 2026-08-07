@@ -2,13 +2,13 @@ import os
 from datetime import datetime, date
 from flask import Blueprint, Flask, g, render_template, request, redirect, url_for, flash, session, send_from_directory, current_app, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import Admin, Candidato, Empresa, Curso, CursoConcluido, Vaga, Recrutamento, Relatorio, Email, Telefone, Fase
-from utils import criptografar, descriptografar, calcular_idade, formatar_data_e_hora, formatar_data, validar_documento, verificar_login, verificar_fase, verificar_tipo_usuario
-from database import banco
+from app.models import Admin, Candidato, Empresa, Curso, CursoConcluido, Vaga, Recrutamento, Relatorio, Email, Telefone, Fase
+from app.utils import criptografar, descriptografar, calcular_idade, formatar_data_e_hora, formatar_data, validar_documento, verificar_login, verificar_fase, verificar_tipo_usuario
+from app.database import banco
 
 candidato_bp = Blueprint('candidato', __name__, url_prefix='/candidato')
 
-@candidato_bp.route('/cadastro-candidato', methods=['POST'])
+@candidato_bp.route('/cadastro-candidato', methods=['GET','POST'])
 @verificar_fase(['Candidatura'])
 @verificar_login(requer_login=False)
 @verificar_tipo_usuario(['candidato'])
@@ -23,17 +23,17 @@ def cadastro_candidato():
                 'nome': f"{i['nome']} ({i['sigla']})"
             }
             cursos.append(curso)
-    return render_template("cadastro-candidato.html")
+    return render_template("candidatos/cadastro-candidato.html")
 
 @candidato_bp.route('/cadastrar-candidato', methods=['POST'])
 @verificar_fase(['Candidatura'])
 @verificar_login(requer_login=False)
 @verificar_tipo_usuario(['candidato'])
 def cadastrar_candidato():
-    resultado_id = banco.execute_query("SELECT seq + 1 FROM sqlite_sequence WHERE name = 'candidatos'")
-    if resultado_id:
-        lista_id = resultado_id if isinstance(resultado_id, list) else [resultado_id]
-        id = lista_id[0][0]
+    id = banco.execute_query("SELECT COALESCE((SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'candidatos'), 1) AS proximo_id;")
+    # if resultado_id:
+    #     lista_id = resultado_id if isinstance(resultado_id, list) else [resultado_id]
+    #     id = lista_id[0][0]
 
     imagem = request.files.get('imagem')
     nome = request.form.get('nome', '').strip()
