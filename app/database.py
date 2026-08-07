@@ -5,9 +5,9 @@ class Database():
 
     def __init__(self):
         self.host = os.environ.get('DB_HOST', 'localhost')
-        self.user = os.environ.get('DB_USER', 'seu_usuario')
-        self.password = os.environ.get('DB_PASSWORD', 'sua_senha')
-        self.database = os.environ.get('DB_NAME', 'nome_do_banco')
+        self.user = os.environ.get('DB_USER', 'root')
+        self.password = os.environ.get('DB_PASSWORD', 'root')
+        self.database = os.environ.get('DB_NAME', 'banco')
         self.port = int(os.environ.get('DB_PORT', 3306))
 
     def get_conn(self):
@@ -73,7 +73,7 @@ def init_db():
             id_segunda_opcao INT, -- Segunda opção de curso (Opcional)
             id_terceira_opcao INT, -- Terceira opção de curso (Opcional)
             disponibilidade VARCHAR(12) NOT NULL DEFAULT "Disponível-", -- Disponível/Indisponível (Disponibilidade para contratação).
-            data_registro DAETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            data_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             status VARCHAR(7) NOT NULL DEFAULT "Ativo" -- Ativo/Inativo
         )
     """)
@@ -111,7 +111,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS cursos_concluidos ( -- Tabela relacional conectando candidatos com cursos já feitos por eles. Novamente, usado para evitar que ele se candidate para o mesmo curso novamente.
             id_candidato INT NOT NULL,
             id_curso INT NOT NULL,
-            PRIMARY KEY (id_candidato, id_curso)
+            PRIMARY KEY (id_candidato, id_curso),
             FOREIGN KEY (id_candidato) REFERENCES candidatos(id),
             FOREIGN KEY (id_curso) REFERENCES cursos(id)
 )
@@ -122,8 +122,8 @@ def init_db():
             id_empresa INT NOT NULL,
             id_curso INT NOT NULL,
             quantidade INT NOT NULL,
-            status VARCHAR(7) NOT NULL DEFAULT, "Ativo" -- Ativo/Inativo
-            PRIMARY KEY (id_empresa, id_curso)
+            status VARCHAR(7) NOT NULL DEFAULT 'Ativo', -- Ativo/Inativo
+            PRIMARY KEY (id_empresa, id_curso),
             FOREIGN KEY (id_empresa) REFERENCES empresas(id),
             FOREIGN KEY (id_curso) REFERENCES cursos(id)
         )
@@ -136,9 +136,9 @@ def init_db():
             relacao VARCHAR(11) NOT NULL, -- Marcado/Selecionado (A relação entre aluno e empresa. "Marcado" seria quando a empresa marca o candidato com interesse, enquanto "Selecionado" seria quando a empresa selecionar o aluno definitivamente para o processo seletivo. Somente essa última opção é visível para o candidato).
             detalhamento TEXT,
             data_interacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Data em que a interação foi feita. Essencialmente idênticas às colunas "data_registro".
-            PRIMARY KEY (id_candidato, id_empresa)
+            PRIMARY KEY (id_candidato, id_empresa),
             FOREIGN KEY (id_candidato) REFERENCES candidatos(id),
-            FOREIGN KEY (id_empresa) REFERENCES empresas(id),
+            FOREIGN KEY (id_empresa) REFERENCES empresas(id)
         )
     """)
 
