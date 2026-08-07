@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro{% endblock %}
+
+{% block main %}
+
+    <h1>Candidatura SENAI</h1>
+    <h2>Cadastro</h2>
+    <div id="container">
+        <form id="form" action="{{ url_for('geral.cadastro') }}" method="POST">
+            <label for="">Nome:</label>
+            <input type="text" name="nome" placeholder="Digite seu nome completo" required>
+
+            <label for="">CPF/CNPJ:</label>
+            <input type="text" name="login" maxlength="18" placeholder="Digite seu CPF/CNPJ" onkeyup="this.value=formatarCPFCNPJ(this.value)" required>
+
+            <label for="">Senha:</label>
+            <input id="inputSenha" type="password" name="senha" placeholder="Digite sua senha" required>
+            <a id="alternarVisibilidadeSenha" href="#" onclick="alternarVisibilidadeSenha(event)"><img id="icone_visibilidade_senha" src="{{ url_for('static', filename='img/icone_olho_aberto.png') }}" alt="Mostrar Senha"></a>
+            
+            <div class="form-buttons">
+                <button type="reset" class="btn-secundario">Limpar</button>
+                <button type="submit" class="btn-primario">Entrar</button>
+            </div>
+        </form>
+        <a href="{{ url_for('geral.login') }}">Já tem uma conta? Acesse já!</a>
+    </div>
+{% endblock %}
+
+<script>
+    document.getElementById('form').addEventListener('submit', function(event) {
+        const login = document.getElementsByName('login')
+        const senha = document.getElementsByName('senha')
+        const caracteresLogin = login.value.length
+        const caracteresSenha = senha.value.length
+        
+        if (caracteresLogin !== 14 && caracteresLogin !== 18) {
+            event.preventDefault()
+            alert("Insira um documento válido no campo de login.")
+            login.focus()
+        } else if (caracteresSenha == 0) {
+            event.preventDefault()
+            alert("Insira uma senha.")
+            senha.focus()
+        } else if (caracteresSenha < 8) {
+            event.preventDefault()
+            alert("A senha deve ser ter no mínimo 8 caracteres.")
+            senha.focus()
+        }
+    })
+
+    function formatarCPFCNPJ(login){
+        const caracteres = document.getElementsByName('login').value.length
+        login = login.replace(/\D/g, '')
+        if (caracteres <= 14) {
+            login = login.substring(0, 11)
+
+            login = login.replace(/\D/g,'')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+        }
+        else {
+            login = login.substring(0, 14)
+
+            login = login.replace(/\D/g,'')
+            login = login.replace(/(\d{2})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1/$2')
+            login = login.replace(/(\d{4})(\d)/, '$1-$2')
+        }
+        return login
+    }
+
+    function alternarVisibilidadeSenha(event) {
+        if (event) event.preventDefault()
+        const inputSenha = document.getElementById('inputSenha')
+        const img = document.getElementById('icone_visibilidade_senha_')
+        if (inputSenha.type === "password") {
+            inputSenha.type = "text"
+            img.src = "{{ url_for('static', filename='img/icone_olho_fechado.png') }}"
+        } else {
+            inputSenha.type = "password"
+            img.src = "{{ url_for('static', filename='img/icone_olho_aberto.png') }}"
+        }
+    }
+</script>

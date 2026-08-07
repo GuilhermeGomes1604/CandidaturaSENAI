@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ops!</title>
+    <link rel="shortcut icon" href="static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+    <main class="container-erro-pagina">
+        <div class="cartao-erro">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <h1 class="titulo-erro {{ category }}">
+                            {% if category == 'erro' %}
+                                Erro!
+                            {% elif category == 'aviso' %}
+                                Atenção!
+                            {% endif %}
+                        </h1>
+                        <p class="mensagem-erro-destaque">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="acoes-erro">
+                <a href="{{ url_for('geral.index') }}" class="btn-voltar">Voltar para o Início</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <img src="static/img/logo_senai.png" alt="Logo Senai" class="footer-logo">
+            <div class="footer-info">
+                <p><strong>Sistema de Contratações de Candidatos</strong> &bull; SENAI Rio Claro &copy; 2026</p>
+                <p class="footer-credits">Desenvolvido por <strong>Guilherme de Campos Gomes</strong> &bull; Curso: Desenvolvimento de Sistemas (2DS)</p>
+                <p class="footer-credits">Orientação: Daniel Felipe Cerri e Eduardo Jorge</p>
+            </div>
+            <div class="footer-version">
+                <span>Versão:</span>
+                <span class="badge-version">1.0.0-rc.1</span>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>

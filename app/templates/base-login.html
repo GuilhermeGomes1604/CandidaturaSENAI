@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block main %}
+    <div id="sidebar">
+        <a href="{{ url_for('usuario') }}">
+            <img src="{{ url_for('geral.exibir_imagem_usuario') }}" alt="Foto de Perfil">
+            <h3>{{ session.get('nome') }}</h3>
+        </a>
+        <a href="{{ url_for('index') }}">
+            <img src="{{ url_for('static', filename='img/icone_casa.png') }}" alt="Página Principal">
+            Início
+        </a>
+        <a href="{{ url_for('logout') }}">
+            <img src="{{ url_for('static', filename='img/icone_sair.png') }}" alt="Sair">
+            Sair
+        </a>
+    </div> 
+
+    <div id="container">
+        <h3 id="saudacao">Olá, {{ session.get('nome') }}!</h3>
+        {% block conteudo %}{% endblock %q}
+    </div>
+{% endblock %}

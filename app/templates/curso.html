@@ -1,0 +1,35 @@
+{% extends 'base-login.html' %}
+
+{% block title %}{{ curso.nome }}{% endblock %}
+
+{% block conteudo %}
+    <div>
+        <p>ID: <span>{{ curso.id }}</span></p>
+        <h3>Nome: <span>{{ curso.nome }}</span></h3>
+        <p>Sigla: <span>{{ curso.sigla }}</span></p>
+        <p>Horário: <span>{{ curso.horario }}</span></p>
+        <p>Detalhamento: <span>{{ curso.detalhamento }}</span></p>
+        <p>Idade Mínima: <span>{{ curso.idade_minima }}</span></p>
+        <p>Duração: <span>{{ curso.duracao }}</span></p>
+        <p>Vagas: <span>{{ curso.vagas }}</span></p>
+        <p>Data de Registro: <span>{{ curso.data_registro }}</span></p>
+        <p>Status: <span>{{ curso.status }}</span></p>
+        
+        {% if session.get('tipo') == 'admin' %}
+            <a onclick="fetch(`{{ url_for('admin.editar_curso', id = curso.id) }}`)">Editar Curso</a>
+            <a onclick="excluirCurso()">Excluir Curso</a>
+        {% endif %}
+
+        <a href="{{ url-for('geral.cursos') }}">Ver Cursos</a>
+    </div>
+{% endblock %}
+
+<script>
+    function excluirCurso() {
+        let resposta = confirm("Deseja mesmo excluir esse curso? Essa ação é irreversível.")
+        if (resposta) {
+            fetch(`{{ url_for('admin.excluir_curso', id = curso.id) }}`)
+            window.location.href = (`{{ url_for('geral.cursos) }}`)
+        }
+    }
+</script>
