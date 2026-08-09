@@ -1,108 +1,58 @@
 {% extends 'base-login.html' %}
 
-{% block title %}{{ candidato.nome }}{% endblock %}
+{% block title %}{{ session.get('nome') }}{% endblock %}
 
 {% block conteudo %}
     <div>
-        <img src="{{ url_for('geral.exibir_imagem_usuario') }}" alt="Foto de perfil de {{ candidato.nome }}">
-        <p>ID: <span>{{ candidato.id }}</span></p>
-        <h3>Nome: <span>{{ candidato.nome }}</span></h3>
-        {% if nome_social %}
-            <h3>Nome Social: <span>{{ candidato.nome_social }}</span></h3>
-        {% endif %}
-        <p>CPF: <span>{{ candidato.cpf }}</span></p>
-        <p>Data de Nascimento: <span>{{ candidato.data_nasc }}</span></p>
-        <p>Idade: <span>{{ candidato.idade }} anos</span></p>
-        <p>Gênero: <span>{{ candidato.genero }}</span></p>
+        <label for="imagem"></label><img id="foto-de-perfil" src="{{ url_for('geral.exibir_imagem_usuario') }}" alt="Foto de Perfil">
+        <input id="imagem" name="imagem" type="file" accept="image/*" onchange="aplicarImagem(this)" hidden>
 
-        <div>
-            <h4>Endereço</h4>
-            <p>CEP: <span>{{ candidato.cep }}</span></p>
-            <p>Endereço: <span>{{ candidato.endereco }}</span></p>
-            <p>Número: <span>{{ candidato.numero }}</span></p>
-            <p>Complemento: <span>{{ candidato.complemento }}</span></p>
-            <p>Bairro: <span>{{ candidato.bairro }}</span></p>
-            <p>Cidade: <span>{{ candidato.cidade }}</span></p>
-            <p>Estado: <span>{{ candidato.estado }}</span></p>
-        </div>
-
-        <div>
-            <h4>E-mails</h4>
-            {% for email in emails %}
-                <p>{{ email.email }}</p>
-            {% endfor %}
-
-            <h4>Telefones</h4>
-            {% for telefone in telefones %}
-                <p>
-                    {{ telefone.numero }}
-                    {% if telefone.preferencia_contato == 'Ambos'%}
-                        {% set preferencia = "Ligação e WhatsApp" %}
-                    {% else %}
-                        {% set preferencia = telefone.preferencia_contato %}
-                    {% endif %}
-                    Preferência de Contato: {{ preferencia }}
-                    Tratar com: {{ telefone.nome_contato }}
-                </p>
-            {% endfor %}
-        </div>
-
-        <p>Escolaridade: <span>{{ candidato.vagas }}</span></p>
-        <p>Período de Estudo: <span>{{ candidato.detalhamento }}</span></p>
-        <p>Já estudou no SENAI: <span>{{ candidato.ja_estudou }}</span></p>
-        {% if candidato.disponibilidade == "Disponível" %}
-            <p>Disponível: <span>Sim<span></p>
-            <div>
-                {% if cursos_selecionados | length == 1 %}
-                    <h4>Curso Selecionados</h4>
-                {% else %}
-                    <h4>Cursos Selecionados</h4>
-                {% endif %}
-                {% for curso in cursos_selecionados %}
-                    <p>{{ loop.index }}ª Opção: <span>{{ curso.nome }} ({{ curso.sigla }})</span></p>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div>
-                <h4>Seleção</h4>
-                <p>Empresa: <span>{{ candidato.empresa }}</span></p>
-                <p>Detalhamento: <span>{{ candidato.detalhamento }}</span></p>
-            </div>
-        {% endif %}
-        <p>Data de Registro: <span>{{ candidato.data_registro }}</span></p>
-        
         {% if session.get('tipo') == 'admin' %}
-            {% if session.get('fase') != 'Seleção' %}
-                <a href="{{ url_for('admin.editar_candidato', id = candidato.id) }}">Editar Candidato</a>
-                <a onclick="excluirCandidato()">Excluir Candidato</a>
-            {% if %}
-        {% else %}
-            {% if session.get('fase') != 'Seleção' %}
-                <a href="{{ url_for('empresa.marcar_candidato', id = candidato.id) }}">Marcar com Interesse</a>
-            {% else %}
-                {% if not candidato.relacao %}
-                    <a onclick="fetch(`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Marcar com Interesse</a>
-                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Selecionar Candidato</a>
-                {% elif candidato.relacao == "Marcado" %}
-                    <a onclick="fetch(`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Desmarcar Candidato</a>
-                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Selecionar Candidato</a>
-                {% else %}
-                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Remover Seleção</a>
-                {% endif %}
+            <h3>Nome Completo: <span>{{ usuario.nome }}</span></h3>
+            <h4>CPF: <span>{{ usuario.cpf }}</span></h4>
+        {% elif session.get('tipo') == 'candidato' %}
+            <h3>Nome Completo: <span>{{ usuario.nome }}</span></h3>
+            {% if usuario.nome_social != '' %}
+                <h4>Nome Social: <span>{{ usuario.nome_social }}</span></h4>
             {% endif %}
+            <h4>CPF: <span>{{ usuario.cpf }}</span></h4>
+            <h4>Data de Nascimento: <span>{{ usuario.data_nasc }}</span></h4>
+            <h4>Gênero: <span>{{ usuario.genero }}</span></h4>
+            <h4>CEP: <span>{{ usuario.cep }}</span></h4>
+            <h4>Endereco: <span>{{ usuario.endereco }}</span></h4>
+            <h4>Número: <span>{{ usuario.numero }}</span></h4>
+            <h4>Complemento: <span>{{ usuario.complemento }}</span></h4>
+            <h4>Bairro: <span>{{ usuario.bairro }}</span></h4>
+            <h4>Cidade: <span>{{ usuario.cidade }}</span></h4>
+            <h4>Estado: <span>{{ usuario.estado }}</span></h4>
+            <h4>Escolaridade: <span>{{ usuario.escolaridade }}</span></h4>
+            <h4>Período de Estudo: <span>{{ usuario.periodo_estudo }}</span></h4>
+        {% else %}
+            <h3>Nome Fantasia: <span>{{ usuario.nome_fantasia }}</span></h3>
+            <h4>Razão Social: <span>{{ usuario.razao_social }}</span></h4>
+            <h4>CNPJ: <span>{{ usuario.cnpj }}</span></h4>
+            <h4>Nome do Responsável: <span>{{ usuario.nome_responsavel }}</span></h4>
         {% endif %}
+        <h4>Data de Registro: <span>{{ usuario.data_registro }}</span></h4>
 
-        <a href="{{ url-for('geral.candidatos') }}">Ver Candidatos</a>
+        <a href="{{ url_for('geral.edicao_dados', id = session.get('id')) }}">Editar Dados</a>
+        <button onclick="excluirConta(session.get('id'))">Excluir Conta</button>
     </div>
 {% endblock %}
 
 <script>
-    
-    function excluirCandidato() {
-        let resposta = confirm("Deseja mesmo excluir esse candidato? Essa ação é irreversível.")
+    function aplicarImagem(input) {
+        if (input.files && input.files[0]) {
+            const arquivo = input.files[0]
+            const urlImagem = URL.createObjectURL(arquivo)
+            document.getElementById('foto-de-perfil').src = urlImagem
+        }
+    }
+
+    function excluirConta() {
+        let resposta = confirm("Deseja mesmo excluir sua conta? Essa ação é irreversível.")
         if (resposta) {
-            fetch(`{{ url_for('candidato.excluir_candidato', id = candidato.id) }}`)
-            window.location.href = (`{{ url_for('geral.cursos) }}`)
+            window.location.href = `{{ url_for('${session.get('tipo')}.excluir_${session.get('tipo')}', id = ${session.get('id')}) }}`
         }
     }
 </script>

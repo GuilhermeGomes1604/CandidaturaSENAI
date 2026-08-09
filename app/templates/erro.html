@@ -1,51 +1,123 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ops!</title>
-    <link rel="shortcut icon" href="static/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" href="static/css/style.css">
-</head>
-<body>
+{% extends 'base-login.html' %}
 
-    <main class="container-erro-pagina">
-        <div class="cartao-erro">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <h1 class="titulo-erro {{ category }}">
-                            {% if category == 'erro' %}
-                                Erro!
-                            {% elif category == 'aviso' %}
-                                Atenção!
-                            {% endif %}
-                        </h1>
-                        <p class="mensagem-erro-destaque">{{ message }}</p>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+{% block title %}Cursos{% endblock %}
 
-            <div class="acoes-erro">
-                <a href="{{ url_for('geral.index') }}" class="btn-voltar">Voltar para o Início</a>
-            </div>
-        </div>
-    </main>
+{% block conteudo %}
+    <div id="container-busca-filtros">
+        <input type="text" name="pesquisa" id="pesquisa" placeholder="Pesquise um curso específico..." onchange="atualizarPagina()">
+        <button onclick="atualizarPagina()"><img src="{{ url_for('static', filename='img/icone_pesquisar.png') }}" alt="Pesquisar"></button>
 
-    <footer>
-        <div class="footer-container">
-            <img src="static/img/logo_senai.png" alt="Logo Senai" class="footer-logo">
-            <div class="footer-info">
-                <p><strong>Sistema de Contratações de Candidatos</strong> &bull; SENAI Rio Claro &copy; 2026</p>
-                <p class="footer-credits">Desenvolvido por <strong>Guilherme de Campos Gomes</strong> &bull; Curso: Desenvolvimento de Sistemas (2DS)</p>
-                <p class="footer-credits">Orientação: Daniel Felipe Cerri e Eduardo Jorge</p>
-            </div>
-            <div class="footer-version">
-                <span>Versão:</span>
-                <span class="badge-version">1.0.0-rc.1</span>
-            </div>
-        </div>
-    </footer>
+        <select name="status" id="status" onchange="atualizarPagina()">
+            <option value="" selected>Todos</option>
+            <option value="ativos">Somente cursos ativos</option>
+            <option value="inativos">Somente cursos inativos</option>
+        </select>
+
+        <select name="horario" id="horario" multiple onchange="atualizarPagina()">
+            <option value="" selected>Selecione horários</option>
+            <option value="Manhã">Manhã</option>
+            <option value="Tarde">Tarde</option>
+            <option value="Noite">Noite</option>
+        </select>
+
+        <h3 id="numero-resultados">Nenhum resultado encontrado</h3>
+    </div>
+
+    <div id="itens"></div>
+{% endblock %}
+
+<script>
+    const selectHorario = document.getElementById('horario')
+
+    selectHorario.addEventListener('mousedown', function (e) {
+    e.preventDefault()
+    const clicada = e.target
+
+    if (clicada.tagName === 'OPTION' && !clicada.disabled) {
+        
+        clicada.selected = !clicada.selected
+        const opcaoPadrao = select.querySelector('option[value=""]')
+        opcaoPadrao.disabled = true
+        opcaoPadrao.selected = false
+        select.dispatchEvent(new Event('change'))
+    }
+    })
     
-</body>
-</html>
+    function atualizarPagina() {
+        const container = document.getElementById('itens')
+        const resultados = document.getElementById('numero-resultados').textContent 
+
+        if (dados.cursos.length == 0) {
+            resultados = "Nenhum resultado encontrado."
+        } else if (dados.cursos.length == 1) {
+            resultados = "1 resultado encontrado."
+        } else {
+            resultados = `${dados.cursos.length} resultados encontrados.`
+        }
+
+        const pesquisa = document.getElementById('pesquisa').value
+        const status = document.getElementById('status').value
+        const horarios = [...document.getElementById('horario').selectedOptions].map(opcao => opcao.value)
+        const urlBase = "{{ url_for('geral.api_dados_cursos') }}"
+        const parametros = new URLSearchParams()
+
+        parametros.append('pesquisa', pesquisa)
+        parametros.append('status', status)
+        horarios.forEach(turno => {
+            parametros.append('horarios', turno)
+        })
+        const urlFinal = `${urlBase}?${parametros.toString()}`
+
+        fetch(urlFinal)
+        .then(response => response.json())
+        .then(dados => {
+            container.innerHTML = ''
+                
+            if (dados.cursos.length === 0) {
+                container.innerHTML = '<h3>Nenhum curso encontrado com estes filtros.</h3>'
+                return
+            }
+
+            dados.cursos.forEach(curso => {
+                const item = document.create('a')
+
+                if (curso.status === 'Ativo'){
+                    const classe = 'ativo'
+                } else {
+                    const classe = 'inativo'
+                }
+                
+                item.id = `a-item-${index + 1}`
+                item.href = `{{ url_for('curso', id = curso.id) }}`
+                item.innerHTML = `
+                <div id="item-${index + 1}" class="item-${classe}">
+                    <p>ID: {{ curso.id }} </p>
+                    <h4>{{ curso.nome }} ({{ curso.sigla }})</h4>
+                    <p>{{ curso.horario }}</p>
+                    <p>Idade Mínima: {{ curso.idade_minima }} anos</p>
+                    <p>Duracão: {{ curso.duracao }}</p>
+                    <p>Vagas: {{ curso.vagas }}</p>
+                    <p>{{ curso.data_registro }}</p>
+                    <p>{{ curso.status }}</p>
+                    
+                    {% if session.get('tipo') == 'admin' %}
+                        <a href="{{ url_for('admin.edicao_curso', id = curso.id) }}">Editar</a>
+                        <a onclick="excluirCurso('{{ curso.id }}','{{ curso.nome }}')">Excluir</a>
+                    {% endif %}
+                </div>
+                ` 
+                container.appendChild(item)
+            })
+        })
+    }
+
+    function excluirCurso(id,nome) {
+        let resposta = confirm(`Deseja mesmo excluir o curso ${nome}?`)
+        if (resposta) {
+            fetch(`{{ url_for('admin.excluir_curso', id = ${id}) }}`)
+            document.getElementById(`a-item-${index + 1}`).remove()
+        }
+    }
+
+    atualizarPagina()
+</script>

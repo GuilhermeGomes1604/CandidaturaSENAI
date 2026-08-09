@@ -1,65 +1,63 @@
-{% extends 'base-login.html' %}
+{% extends 'base.html' %}
 
-{% block titulo_completo %}Candidatura SENAI{% endblock %}
+{% block title %}Esqueci minha senha{% endblock %}
 
-{% block conteudo %}
-    <div>
-        {% if session.get('tipo') == 'admin' %}
-            <h2>Fase Atual: {{ session.get('fase') }}</h2>
+{% block main %}
+    <h2>Esqueceu sua senha?</h2>
+    <div id="container">
+        <form id="form" action="{{ url_for('geral.esqueci_senha') }}" method="POST">
+            <label for="">CPF/CNPJ:</label>
+            <input type="text" name="login" maxlength="18" placeholder="Digite seu CPF/CNPJ" onkeyup="this.value=formatarCPFCNPJ(this.value)">
 
-            <a href="{{ url_for('admin.admins') }}">Gerenciar Administrador</a>
-            <a href="{{ url_for('admin.cadastrar_admin') }}">Cadastrar Administrador</a>
-            <a href="{{ url_for('admin.fase') }}">Gerenciar Fase</a>
-            <a href="{{ url_for('admin.relatorios') }}">Ver Relatórios</a>
-            <a href="{{ url_for('admin.empresas') }}">Gerenciar Empresas</a>
-            <a href="{{ url_for('geral.candidatos') }}">Gerenciar Candidatos</a>
-            <a href="{{ url_for('geral.cursos') }}">Gerenciar Cursos</a>
-            <a href="{{ url_for('admin.redefinir_senhas') }}">Redefinir Senhas</a> 
-        {% elif session.get('tipo') == 'candidato' %}
-            {% if session.get('fase') == 'Candidatura' %}
-                {% if selecionou_cursos == 'False' %}
-                    <h2>Selecione cursos de interesses para poder participar do processo seletivo! Você perderá sua participação se não selecionar ao menos um antes da fase de seleção.</h2>
-                    <a href="{{ url_for('candidato.selecionar_cursos') }}">Selecionar Cursos de Interesse</a>
-                {% else %}
-                    <h2>A fase de seleção de candidatos pelas empresas ainda não começou. Fique de olho!</h2>
-                {% endif %}
-            {% else %}
-                {% if selecionou_cursos == 'False' %}
-                    <h2>Você não selecionou nenhum curso de interesse e perdeu a participação no processo seletivo.</h2>
-                {% elif selecionado == 'False' %}
-                    <h2>Você ainda não foi selecionado. Ainda há tempo, boa sorte!</h2>
-                {% else %}
-                    <h2>Meu parabéns! Você foi selecionado para o processo seletivo por: {{ empresa }}! Busque a empresa para próximas instruções.</h2>
-                {% endif %}
-            {% endif %}
-        {% else %}
-            <h2>Fase Atual: {{ session.get('fase') }}</h2>
-
-            {% if session.get('fase') == 'Preparação' %}
-                <a href="{{ url_for('geral.vagas, id = session.get('id')') }}">Gerenciar Vagas</a>
-                <a href="{{ url_for('geral.cursos') }}">Ver Cursos</a>
-            {% elif session.get('fase') == 'Candidatura' %}
-                <a href="{{ url_for('geral.candidatos') }}">Ver Candidatos</a>
-                <a href="{{ url_for('geral.marcados', id = session.get('id')') }}">Ver Candidatos Marcados com Interesse</a>
-                <a href="{{ url_for('empresa.vagas, id = session.get('id')') }}">Ver Vagas</a>
-                <a href="{{ url_for('geral.cursos') }}">Ver Cursos</a>
-            {% else %}
-                <a href="{{ url_for('geral.candidatos') }}">Ver Candidatos</a>
-                <a href="{{ url_for('geral.marcados', id = session.get('id')') }}">Ver Candidatos Marcados com Interesse</a>
-                <a href="{{ url_for('geral.selecionados', id = session.get('id')') }}">Ver Candidatos Selecionados</a>
-                <a href="{{ url_for('empresa.vagas, id = session.get('id')') }}">Ver Vagas</a>
-                <a href="{{ url_for('geral.cursos') }}">Ver Cursos</a>
-                <button onclick="encerrarSelecao()">Encerrar Seleção</button>
-            {% endif %}
-        {% endif %}
+            <label for="">Nome:</label>
+            <input type="text" name="nome" placeholder="Digite seu nome completo/nome_fantasia da sua empresa">
+            
+            <div class="form-buttons">
+                <button type="reset" class="btn-secundario">Limpar</button>
+                <button type="submit" class="btn-primario">Entrar</button>
+            </div>
+        </form>
     </div>
 {% endblock %}
 
 <script>
-    function encerrarSelecao() {
-        let resposta = confirm("Deseja mesmo encerrar a seleção de candidatos para o processo seletivo? Essa ação é irreversível.")
-        if (resposta) {
-            window.location.href = "{{ url_for('empresa.encerrar_selecao') }}"
+    document.getElementById('form').addEventListener('submit', function(event) {
+        const login = document.getElementsByName('login')
+        const nome = document.getElementsByName('nome')
+        const caracteresLogin = login.value.length
+        const caracteresNome = nome.value.length
+        
+        if (caracteresLogin !== 14 && caracteresLogin !== 18) {
+            event.preventDefault()
+            alert("Insira um CPF/CNPJ válido.")
+            login.focus()
+        } else if (caracteresNome == 0) {
+            event.preventDefault()
+            alert("Insira um nome.")
+            nome.focus()
         }
+    })
+
+    function formatarCPFCNPJ(login){
+        const caracteres = document.getElementsByName('login').value.length
+        login = login.replace(/\D/g, '')
+        if (caracteres <= 14) {
+            login = login.substring(0, 11)
+
+            login = login.replace(/\D/g,'')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+        }
+        else {
+            login = login.substring(0, 14)
+
+            login = login.replace(/\D/g,'')
+            login = login.replace(/(\d{2})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1/$2')
+            login = login.replace(/(\d{4})(\d)/, '$1-$2')
+        }
+        return login
     }
 </script>

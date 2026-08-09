@@ -1,159 +1,87 @@
-{% extends 'base-login.html' %}
+{% extends 'base.html' %}
 
-{% block title %}Vagas - {{ empresa.nome }}{% endblock %}
+{% block title %}Cadastro{% endblock %}
 
-{% block conteudo %}
-    <div id="container-busca-filtros">
-        <h3 id="numero-resultados">Nenhum resultado encontrado</h3>
+{% block main %}
+
+    <h1>Candidatura SENAI</h1>
+    <h2>Cadastro</h2>
+    <div id="container">
+        <form id="form" action="{{ url_for('geral.cadastro') }}" method="POST">
+            <label for="">Nome:</label>
+            <input type="text" name="nome" placeholder="Digite seu nome completo" >
+
+            <label for="">CPF/CNPJ:</label>
+            <input type="text" name="login" maxlength="18" placeholder="Digite seu CPF/CNPJ" onkeyup="this.value=formatarCPFCNPJ(this.value)" >
+
+            <label for="">Senha:</label>
+            <input id="input-senha" type="password" name="senha" placeholder="Digite sua senha" >
+            <a id="alternar-visibilidade-senha" href="#" onclick="alternar-visibilidade-senha(event)"><img id="icone-visibilidade-senha" src="{{ url_for('static', filename='img/icone_olho_aberto.png') }}" alt="Mostrar Senha"></a>
+            
+            <div class="form-buttons">
+                <button type="reset" class="btn-secundario">Limpar</button>
+                <button type="submit" class="btn-primario">Entrar</button>
+            </div>
+        </form>
+        <a href="{{ url_for('geral.login') }}">Já tem uma conta? Acesse já!</a>
     </div>
-
-    <div id="itens"></div>
-
-    <button onclick="document.getElementById('cadastro-vaga').hidden = false">+</button>
-
-    <div id="cadastro-vaga" hidden>
-        <select name="curso" id="curso">
-                <option value="">Selecione um curso</option>
-            {% for curso in cursos %}
-                <option value="{{ curso.id }}">{{ curso.nome }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="quantidade">Quantidade de Vagas:</label>
-        <input type="number" id="quantidade">
-
-        <label for="detalhamento">Detalhamento: <span id="tamanho-detalhamento"> (0/150)</span></label>
-        <input type="text" id="detalhamento" maxlength="150" onchange="placeholderDetalhamento()" placeholder="Descreva a função a ser desempenhada pelo candidato (Opcional)">
-
-        {% if session.get('tipo') == 'empresa' and session.get('fase') == 'Preparação' %}
-            <button onclick="cadastrarVaga()">Cadastrar Vaga</button>
-        {% endif %}
-    </div>
-    
 {% endblock %}
 
 <script>
-    const container = document.getElementById('itens')
-    
-    function atualizarPagina() { 
-        const resultados = document.getElementById('numero-resultados').textContent 
-
-        if (dados.cursos.length == 0) {
-            resultados = "Nenhum resultado encontrado."
-        } else if (dados.cursos.length == 1) {
-            resultados = "1 resultado encontrado."
-        } else {
-            resultados = `${dados.cursos.length} resultados encontrados.`
-        }
-
-        fetch("{{ url_for('geral.api_dados_vagas' id = empresa.id) }}")
-        .then(response => response.json())
-        .then(dados => {
-            container.innerHTML = ''
-                
-            if (dados.vagas.length == 0) {
-                container.innerHTML = '<h3>Nenhum vaga encontrado com estes filtros.</h3>'
-                return
-            }
-
-            dados.vagas.forEach(vaga => {
-
-                item.id = `item-${'{{ vaga.id }}'}`
-                item.classList.add('item') 
-                item.innerHTML = `
-                <p>ID: {{ vaga.id }} </p>
-                <h4 id="curso-${'{{ vaga.id }}'}">{{ vaga.curso }}</h4>
-                <p id="quantidade-${'{{ vaga.id }}'}">{{ vaga.quantidade }}</p>
-                <p id="detalhamento-${'{{ vaga.id }}'}">{{ vaga.detalhamento }}</p>
-
-                {% if session.get('tipo') == 'empresa' and session.get('fase') == 'Preparação' %}
-                    <button onclick="editarVaga(${id})">Editar</button>
-                    <button onclick="excluirVaga(${id})">Excluir</button>
-                {% endif %}
-                ` 
-                container.appendChild(item)
-            })
-        })
-    }
-
-    function placeholderDetalhamento() {
-        document.getElementById('tamanho-detalhamento').textContent = ` (${document.getElementById('detalhamento').length}/150)`
-    }
-
-    function cadastrarVaga() {
-        const curso = document.getElementById('curso').value
-        const quantidade = document.getElementById('quantidade').value
-        const detalhamento = document.getElementById('detalhamento').textContent
+    document.getElementById('form').addEventListener('submit', function(event) {
+        const login = document.getElementsByName('login')
+        const senha = document.getElementsByName('senha')
+        const caracteresLogin = login.value.length
+        const caracteresSenha = senha.value.length
         
-        if (!curso || !quantidade || !detalhamento) {
-            alert("Preencha todos os campos para cadastrar uma nova vaga!")
+        if (caracteresLogin !== 14 && caracteresLogin !== 18) {
+            event.preventDefault()
+            alert("Insira um CPF/CNPJ válido.")
+            login.focus()
+        } else if (caracteresSenha == 0) {
+            event.preventDefault()
+            alert("Insira uma senha.")
+            senha.focus()
+        } else if (caracteresSenha < 8) {
+            event.preventDefault()
+            alert("A senha deve ser ter no mínimo 8 caracteres.")
+            senha.focus()
+        }
+    })
+
+    function formatarCPFCNPJ(login){
+        const caracteres = document.getElementsByName('login').value.length
+        login = login.replace(/\D/g, '')
+        if (caracteres <= 14) {
+            login = login.substring(0, 11)
+
+            login = login.replace(/\D/g,'')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+        }
+        else {
+            login = login.substring(0, 14)
+
+            login = login.replace(/\D/g,'')
+            login = login.replace(/(\d{2})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1.$2')
+            login = login.replace(/(\d{3})(\d)/, '$1/$2')
+            login = login.replace(/(\d{4})(\d)/, '$1-$2')
+        }
+        return login
+    }
+
+    function alternar-visibilidade-senha(event) {
+        if (event) event.preventDefault()
+        const input-senha = document.getElementById('input-senha')
+        const img = document.getElementById('icone-visibilidade-senha_')
+        if (input-senha.type === "password") {
+            input-senha.type = "text"
+            img.src = "{{ url_for('static', filename='img/icone_olho_fechado.png') }}"
         } else {
-            const dados = {
-            'curso': `${curso}`,
-            'quantidade': `${quantidade}`,
-            'detalhamento': `${detalhamento}`
-            }
-
-            fetch(`{{ url_for('empresa.cadastrar_vaga', dados = ${dados}) }}`)
-            item.id = `item-${'{{ vaga.id }}'}`
-            item.classList.add('item')
-            item.innerHTML = `
-            <p>ID: {{ vaga.id }} </p>
-            <h4 id="curso-${'{{ vaga.id }}'}">{{ vaga.curso }}</h4>
-            <p id="quantidade-${'{{ vaga.id }}'}">{{ vaga.quantidade }}</p>
-            <p id="detalhamento-${'{{ vaga.id }}'}">{{ vaga.detalhamento }}</p>
-
-            {% if session.get('tipo') == 'empresa' and session.get('fase') == 'Preparação' %}
-                <button onclick="editarVaga(${id})">Editar</button>
-                <button onclick="excluirVaga(${id})">Excluir</button>
-            {% endif %}
-            ` 
-            container.appendChild(item)
-            document.getElementById("cadastro-vaga").hidden = true
+            input-senha.type = "password"
+            img.src = "{{ url_for('static', filename='img/icone_olho_aberto.png') }}"
         }
     }
-
-    function editarVaga(id) {
-        document.getElementById('curso').value = document.getElementById(`curso-${id}`).value
-        document.getElementById('quantidade').value = document.getElementById(`quantidade-${id}`).value
-        document.getElementById('detalhamento').textContent = document.getElementById(`detalhamento-${id}`).textContent
-
-        const curso = document.getElementById('curso').value
-        const quantidade = document.getElementById('quantidade').value
-        const detalhamento = document.getElementById('detalhamento').textContent
-
-        if (!curso || !quantidade || !detalhamento) {
-            alert("Preencha todos os campos para editar a vaga!")
-        } else {
-            const dados = {
-            'curso': `${curso}`,
-            'quantidade': `${quantidade}`,
-            'detalhamento': `${detalhamento}`
-            }
-
-            fetch(`{{ url_for('empresa.editar_vaga', dados = ${dados}) }}`)
-            document.getElementById(`item-${id}`).innerHTML = `
-            <p>ID: {{ vaga.id }} </p>
-            <h4 id="curso-${'{{ vaga.id }}'}">${curso}</h4>
-            <p id="quantidade-${'{{ vaga.id }}'}">${quantidade}</p>
-            <p id="detalhamento-${'{{ vaga.id }}'}">${detalhamento}<p>
-            
-            {% if session.get('tipo') == 'empresa' and session.get('fase') == 'Preparação' %}
-                <button onclick="editarVaga(${id})">Editar</button>
-                <button onclick="excluirVaga(${id})">Excluir</button>
-            {% endif %}
-            `
-            document.getElementById("cadastro-vaga").hidden = true
-        }
-    }
-
-    function excluirVaga(id) {
-        const resposta = confirm("Deseja mesmo excluir a vaga?")
-        if (resposta) {
-            fetch(`{{ url_for('empresa.excluir_vaga', id = ${id}) }}`)
-            container.removeChild(document.getElementById(`item-${'{{ vaga.id }}'}`))
-        }
-    }
-
-    atualizarPagina()
 </script>

@@ -1,0 +1,31 @@
+{% extends 'base-login.html' %}
+
+{% block title %}{{ empresa.nome }}{% endblock %}
+
+{% block conteudo %}
+    <div>
+        <img src="{{ url_for('geral.exibir_imagem_empresa', id = empresa.id) }}" alt="Foto de perfil de {{ empresa.nome }}">
+        <p>ID: <span>{{ empresa.id }}</span></p>
+        <h3>Nome Fantasia: <span>{{ empresa.nome_fantasia }}</span></h3>
+        <p>Razão Social: <span>{{ empresa.razao_social }}</span></p>
+        <p>CNPJ: <span>{{ empresa.cnpj }}</span></p>
+        <p>Nome do Responsável: <span>{{ empresa.nome_responsavel }}</span></p>
+        <p>Data de Registro: <span>{{ empresa.data_registro }}</span></p>
+        
+        <a href="{{ url_for('admin.edicao_empresa', id = empresa.id) }}">Editar Empresa</a>
+        <a onclick="excluirEmpresa()">Excluir Empresa</a>
+
+        <a href="{{ url-for('geral.admins') }}">Ver Empresas</a>
+    </div>
+
+    {% endblock %}
+
+<script>
+    function excluirEmpresa() {
+        let resposta = confirm("Deseja mesmo excluir essa empresa? Essa ação é irreversível.")
+        if (resposta) {
+            fetch(`{{ url_for('admin.excluir_empresa', id = empresa.id) }}`)
+            window.location.href = (`{{ url_for('admin.empresas) }}`)
+        }
+    }
+</script>

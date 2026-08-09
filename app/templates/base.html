@@ -1,47 +1,105 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        {% block titulo_completo %}
-            {% block title %}{% endblock %} | Candidatura SENAI
-        {% endblock %}
-    </title>
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="container-mensagens">
-            {% for category, message in messages %}
-                <div class="alerta alerta-{{ category }}">
-                    {{ message }}
+{% extends 'base-login.html' %}
+
+{% block title %}Candidatos Marcados com Interesse{{ ' - ' ~ empresa if session.get('tipo') == 'admin' else '' }}{% endblock %}
+
+{% block conteudo %}
+    <div id="itens">
+        {% for candidato in candidatos %}
+            <a href="{{ url_for('geral.candidato', id = candidato.id) }}">
+                <div id="item-{{ loop.index }}" class="item-{{ classe }}">
+                    <img src="{{ url_for('geral.exibir_imagem_candidato', id = candidato.id) }}" alt="Foto de perfil de {{ candidato.nome }}">
+                    <p>ID: {{ candidato.id }} </p>
+                    <h4>{{ candidato.nome }}</h4>
+                    <p>{{ candidato.idade }} anos</p>
+                    <p>{{ candidato.escolaridade }}</p>
+                    {% if candidato.periodo_livre | length == 1 %}
+                        <p>{{ candidato.periodo_livre[0] }}</p>
+                    {% elif candidato.periodo_livre | length == 2 %}
+                        <p>{{ candidato.periodo_livre[0] }} e {{ candidato.periodo_livre[1] }}</p>
+                    {% else %}
+                        <p>{{ candidato.periodo_livre[0] }}, {{ candidato.periodo_livre[1] }} e {{ candidato.periodo_livre[2] }}</p>
+                    {% endif %}
+                    
+                    {% if not candidato.relacao %}
+                        <a class="btn-action" data-url="{{ url_for('empresa.marcar_candidato', id = candidato.id) }}">Marcar com Interesse</a>
+                        <a class="btn-action" data-url="{{ url_for('empresa.selecionar_candidato', id = candidato.id, nome = candidato.nome) }}" data-msg-extra="Insira os detalhes da seleção de {{ candidato.nome }}:">Selecionar Candidato</a>
+                    {% elif candidato.relacao == "Marcado" %}
+                        <a class="btn-action" data-url="{{ url_for('empresa.marcar_candidato', id = candidato.id) }}">Desmarcar Candidato</a>
+                        <a class="btn-action" data-url="{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}" data-msg-extra="Insira os detalhes da seleção de {{ candidato.nome }}:">Selecionar Candidato</a>
+                    {% else %}
+                        <a class="btn-action" data-url="{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}" data-msg-confirma="Deseja mesmo remover {{ candidato.nome }} dos seus candidatos selecionados?">Remover Seleção</a>
+                    {% endif %}
                 </div>
-            {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+            </a>
+        {% endfor %}
+    </div>
+{% endblock %}
 
-    <main>
-        {% block main %}{% endblock %}
-    </main>
-
-    <footer>
-        <div class="footer-container">
-            <img src="{{ url_for('static', filename='img/logo_senai.png') }}" alt="Logo do SENAI" class="footer-logo">
-            <div class="footer-info">
-                <p><strong>Sistema de Contratações de Candidatos</strong> &bull; SENAI Rio Claro &copy; 2026</p>
-                <p class="footer-credits">Desenvolvido por <strong>Guilherme de Campos Gomes</strong> &bull; Curso: Desenvolvimento de Sistemas (2DS)</p>
-                <p class="footer-credits">Orientação: Daniel Felipe Cerri e Eduardo Jorge</p>
-            </div>
-            <div class="footer-version">
-                <span>Versão:</span>
-                <span class="badge-version">1.0.0-rc.1</span>
-            </div>
-        </div>
-    </footer>
+<script>
+    document.querySelectorAll('.btn-action').forEach(botao => {
+        botao.addEventListener('click', function(e) {
+            e.preventDefault()
+            e.stopPropagation()
+            
+            const url = this.getAttribute('data-url')
+            const msgConfirma = this.getAttribute('data-msg-confirma') || ''
+            const msgExtra = this.getAttribute('data-msg-extra') || ''
+            
+            if (msgConfirma) {
+                atualizarBotoesEmpresa(url, msgConfirma)
+            } else if (msgExtra) {
+                atualizarBotoesEmpresa(url, '', msgExtra)
+            } else {
+                atualizarBotoesEmpresa(url)
+            }
+        })
+    })
     
-</body>
-</html>
+    function atualizarBotoesEmpresa(url,pergunta) {
+        if (pergunta) {
+            let resposta = confirm(pergunta)
+            if (resposta) {
+            } else {
+                return
+            }
+        } else {
+            fetch(url)
+            const item = document.createElement('a')
+
+            item.innerHTML = ''
+            item.innerHTML = `
+            <div id="item-\${index + 1}" class="item-\${classe}">
+                <img src="{{ url_for('geral.exibir_imagem_candidato', id = candidato.id) }}" alt="Foto de perfil de {{ candidato.nome }}">
+                <p>ID: {{ candidato.id }} </p>
+                <h4>{{ candidato.nome }}</h4>
+                <p>{{ candidato.idade }} anos</p>
+                <p>{{ candidato.escolaridade }}</p>
+                {% if candidato.periodo_livre | length == 1 %}
+                    <p>{{ candidato.periodo_livre[0] }}</p>
+                {% elif candidato.periodo_livre | length == 2 %}
+                    <p>{{ candidato.periodo_livre[0] }} e {{ candidato.periodo_livre[1] }}</p>
+                {% else %}
+                    <p>{{ candidato.periodo_livre[0] }}, {{ candidato.periodo_livre[1] }} e {{ candidato.periodo_livre[2] }}</p>
+                {% endif %}
+                <p>{{ candidato.data_registro }}</p>
+                
+                {% if session.get('tipo') == 'admin' %}
+                    <a href="{{ url_for('admin.edicao_candidato', id = candidato.id) }}>Editar</a>
+                    <a onclick="excluirCandidato()">Excluir</a>
+                {% else %}
+                    {% if not candidato.relacao %}
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}\`)">Marcar com Interesse</a>
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.selecionar_candidato', id = candidato.id, nome = candidato.nome) }}\`,'',\`Insira os detalhes da seleção de {{ candidato.nome }}:\`)">Selecionar Candidato</a>
+                    {% elif candidato.relacao == "Marcado" %}
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}\`)">Desmarcar Candidato</a>
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}\`,'',\`Insira os detalhes da seleção de {{ candidato.nome }}:\`)">Selecionar Candidato</a>
+                    {% else %}
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.selecionar_candidato', id = candidato.id') }}\`,\`Deseja mesmo remover {{ candidato.nome }} dos seus candidatos selecionados?\`)">Remover Seleção</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            `
+
+        }
+    }
+</script>

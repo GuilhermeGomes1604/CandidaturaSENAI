@@ -1,57 +1,32 @@
 import os
-from datetime import datetime, date
-from flask import Blueprint, Flask, g, render_template, request, redirect, url_for, flash, session, send_from_directory, current_app, jsonify
-from werkzeug.security import generate_password_hash, check_password_hash
-from app.models import Admin, Candidato, Empresa, Curso, CursoConcluido, Vaga, Recrutamento, Relatorio, Email, Telefone, Fase
-from app.utils import criptografar, descriptografar, calcular_idade, formatar_data_e_hora, formatar_data, validar_documento, verificar_login, verificar_fase, verificar_tipo_usuario
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import generate_password_hash
+from app.models import Empresa, Vaga, Email, Telefone
+from app.utils import criptografar, validar_documento, verificar_login, verificar_fase, verificar_tipo_usuario
 from app.database import banco
 
-candidato_bp = Blueprint('candidato', __name__, url_prefix='/candidato')
+empresa_bp = Blueprint('empresa', __name__, url_prefix='/empresa')
 
-@candidato_bp.route('/cadastro-candidato', methods=['GET','POST'])
+@empresa_bp.route('/cadastro-empresa')
+@verificar_fase(['Preparacao','Candidatura'])
+@verificar_login(requer_login=False)
+@verificar_tipo_usuario(['empresa'])
+def cadastro_empresa():
+    return render_template("empresas/cadastro-empresa.html")
+
+@empresa_bp.route('/cadastrar-empresa', methods=['POST'])
 @verificar_fase(['Candidatura'])
 @verificar_login(requer_login=False)
-@verificar_tipo_usuario(['candidato'])
-def cadastro_candidato():
-    dados = banco.execute_query("SELECT * FROM CURSOS")
-    cursos = []
-    if dados:
-        lista = dados if isinstance(dados, list) else [dados]
-        for i in lista:
-            curso = {
-                'id': i['id'],
-                'nome': f"{i['nome']} ({i['sigla']})"
-            }
-            cursos.append(curso)
-    return render_template("candidatos/cadastro-candidato.html")
-
-@candidato_bp.route('/cadastrar-candidato', methods=['POST'])
-@verificar_fase(['Candidatura'])
-@verificar_login(requer_login=False)
-@verificar_tipo_usuario(['candidato'])
-def cadastrar_candidato():
-    id = banco.execute_query("SELECT COALESCE((SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'candidatos'), 1) AS proximo_id;")
-    # if resultado_id:
-    #     lista_id = resultado_id if isinstance(resultado_id, list) else [resultado_id]
-    #     id = lista_id[0][0]
-
+@verificar_tipo_usuario(['empresa'])
+def cadastrar_empresa():
+    id = banco.execute_query("SELECT COALESCE((SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'empresas'), 1) AS proximo_id;")
+        
     imagem = request.files.get('imagem')
-    nome = request.form.get('nome', '').strip()
-    nome_social = request.form.get('nome_social', '').strip()
-    cpf = request.form.get('cpf', '').strip()
+    nome_fantasia = request.form.get('nome_fantasia', '').strip()
+    razao_social = request.form.get('razao_social', '').strip()
+    cnpj = request.form.get('cnpj', '').strip()
     senha = request.form.get('senha', '').strip()
-    data_nasc = request.form.get('data_nasc', '').strip()
-    genero = request.form.get('genero', '').strip()
-    cep = request.form.get('cep', '').strip()
-    endereco = request.form.get('endereco', '').strip()
-    numero = request.form.get('numero', '').strip()
-    complemento = request.form.get('complemento', '').strip()
-    bairro = request.form.get('bairro', '').strip()
-    cidade = request.form.get('cidade', '').strip()
-    estado = request.form.get('estado', '').strip()
-    escolaridade = request.form.get('escolaridade', '').strip()
-    periodo_estudo = request.form.get('periodo_estudo', '').strip()
-    ja_estudou = request.form.get('ja_estudou', '').strip()
+    nome_responsavel = request.form.get('nome_responsavel', '').strip()
     email1 = request.form.get('email1', '').strip()
     email2 = request.form.get('email2', '').strip()
     email3 = request.form.get('email3', '').strip()
@@ -68,22 +43,26 @@ def cadastrar_candidato():
     whatsapp3 = request.form.get('whatsapp3', '').strip()
     nome_contato3 = request.form.get('nome_contato3', '').strip()
 
+    if not validar_documento(cnpj, 'cnpj'):
+        flash("CNPJ inválido!", "erro")
+        return redirect(url_for('empresa.cadastro_empresa'))
+
     if imagem and imagem.filename:
-        nome_arquivo = f"candidato_{id}.jpg"
-        pasta_candidatos = os.path.join('UPLOAD_FOLDER', 'candidatos')
-        os.makedirs(pasta_candidatos, exist_ok=True)
-        caminho = os.path.join(pasta_candidatos, nome_arquivo)
+        nome_arquivo = f"empresa_{id}.jpg"
+        pasta_empresas = os.path.join('UPLOAD_FOLDER', 'empresas')
+        os.makedirs(pasta_empresas, exist_ok=True)
+        caminho = os.path.join(pasta_empresas, nome_arquivo)
         imagem.save(caminho)
 
     obj = Email()
     obj.id_relativo = id
-    obj.tipo = 'candidato' 
+    obj.tipo = 'empresa' 
 
     lista_emails = [email1, email2, email3]
 
     for email in lista_emails:
         if email:
-            obj.email = email 
+            obj.email = criptografar(email)
             
             banco.execute_non_query(
                 'INSERT INTO emails (id_relativo, tipo, email) VALUES (%s, %s, %s)',
@@ -92,7 +71,7 @@ def cadastrar_candidato():
 
     obj = Telefone()
     obj.id_relativo = id
-    obj.tipo = 'candidato' 
+    obj.tipo = 'empresa' 
 
     lista_telefones = [
         (numero1, ligacao1, whatsapp1, nome_contato1),
@@ -110,106 +89,96 @@ def cadastrar_candidato():
             else:
                 preferencia_contato = "WhatsApp"
             
-            obj.numero = numero
+            obj.numero = criptografar(numero)
             obj.preferencia_contato = preferencia_contato
             obj.nome_contato = nome_contato
             
             banco.execute_non_query(
                 """INSERT INTO telefones (id_relativo, tipo, numero, preferencia_contato, nome_contato) VALUES (%s, %s, %s, %s, %s)""",obj.id_relativo, obj.tipo, obj.numero, obj.preferencia_contato, obj.nome_contato)
+            
+    obj = Empresa()
 
-    contador = 1
-
-    while True:
-        id_curso = request.form.get(f"curso_concluido{contador}", '').strip()
-        if not id_curso: 
-            break
-
-        banco.execute_non_query(
-            'INSERT INTO cursos_concluidos (id_candidato, id_curso) VALUES (%s, %s)', 
-            id, id_curso
-        )
-        contador += 1
-
-    obj = Candidato()
-
-    obj.tipo = "candidato"
-    obj.nome = criptografar(nome)
-    obj.nome_social = criptografar(nome_social)
-    obj.cpf = criptografar(cpf)
+    obj.nome_fantasia = criptografar(nome_fantasia)
+    obj.razao_social = criptografar(razao_social)
+    obj.cnpj = criptografar(cnpj)
     obj.senha = generate_password_hash(senha)
-    obj.data_nasc = criptografar(data_nasc)
-    obj.genero = genero
-    obj.cep = criptografar(cep)
-    obj.endereco = criptografar(endereco)
-    obj.numero = criptografar(numero)
-    obj.complemento = criptografar(complemento)
-    obj.bairro = criptografar(bairro)
-    obj.cidade = criptografar(cidade)
-    obj.estado = criptografar(estado)
-    obj.escolaridade = escolaridade
-    obj.periodo_estudo = periodo_estudo
-    obj.ja_estudou = ja_estudou
+    obj.nome_responsavel = criptografar(nome_responsavel)
 
-    banco.execute_non_query(banco.execute_non_query('INSERT INTO candidatos (tipo, nome, nome_social, cpf, senha, data_nasc, genero, cep, endereco, numero, complemento, bairro, cidade, estado, escolaridade, periodo_estudo, ja_estudou) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)', obj.tipo, obj.nome, obj.nome_social, obj.cpf, obj.senha, obj.data_nasc, obj.genero, obj.cep, obj.endereco, obj.numero, obj.complemento, obj.bairro, obj.cidade, obj.estado, obj.escolaridade, obj.periodo_estudo, obj.ja_estudou))
+    banco.execute_non_query('INSERT INTO empresas (nome_fantasia, razao_social, cnpj, senha, nome_responsavel) VALUES (%s, %s, %s, %s, %s)', obj.nome_fantasia, obj.razao_social, obj.cnpj, obj.senha, obj.nome_responsavel)
 
-    session.pop('nome_completo')
-    session.pop('cpf')
+    session.pop('nome_fantasia')
+    session.pop('cnpj')
     session.pop('senha')
 
-    if nome_social != '':
-        nome = nome_social.split()[0]
-    else:
-        nome = nome.split()[0]
-    flash(f'Conta criada com sucesso! Seja bem-vindo, {nome}!', 'sucesso')
-    return redirect(url_for('candidato.selecao_cursos'))
-
-@candidato_bp.route('/selecao-cursos')
-@verificar_fase(['Candidatura'])
-@verificar_login(requer_login=False)
-@verificar_tipo_usuario(['candidato'])
-def selecao_cursos():
-    data_nasc = banco.execute_query("SELECT data_nasc FROM candidatos WHERE id = %s", session.get('id'))[0][0]
-    data_nasc = formatar_data(descriptografar(data_nasc))
-    idade = calcular_idade(data_nasc)
-    nascimento = datetime.strptime(data_nasc, '%Y-%m-%d').date()
-    aniversario_24 = date(nascimento.year + 24, nascimento.month, nascimento.day)
-    hoje = date.today()
-    meses_faltantes = (aniversario_24.year - hoje.year) * 12 + (aniversario_24.month - hoje.month)
-    if hoje.day > aniversario_24.day:
-        meses_faltantes -= 1
-
-    dados = banco.execute_query("""
-    SELECT * FROM cursos WHERE status = "Ativo" 
-    AND id IN (SELECT DISTINCT id_cursos FROM vagas WHERE status = 'Ativo') 
-    AND id NOT IN (SELECT DISTINCT id_curso FROM cursos_concluidos WHERE id_candidato = %s) 
-    AND NOT EXISTS (SELECT 1 FROM candidatos WHERE id_candidato = %s AND (periodo_estudo = horario OR (periodo_estudo = 'Integral' AND horario IN ('Manhã', 'Tarde'))))""",
-    session.get('id'), session.get('id'))
-    cursos = []
-    if dados:
-        lista = dados if isinstance(dados, list) else [dados]
-        for i in lista:
-            if i['duracao'] < meses_faltantes and i['idade_minima'] >= idade:
-                curso = {
-                    'id': i['id'],
-                    'nome': f"{i['nome']} ({i['sigla']})",
-                    'horario': i['horario'],
-                    'duracao': i['duracao']
-                }
-            cursos.append(curso)
-    return render_template("selecionar-curso.html", cursos = cursos)
-
-@candidato_bp.route('/selecionar-curso')
-@verificar_fase(['Candidatura'])
-@verificar_login(requer_login=False)
-@verificar_tipo_usuario(['candidato'])
-def selecionar_curso(id_primeira_opcao, id_segunda_opcao, id_terceira_opcao):
-    banco.execute_non_query("UPDATE candidatos SET id_primeira_opcao = %s, id_segunda_opcao = %s, id_terceira_opcao = %s WHERE id = %s", id_primeira_opcao, id_segunda_opcao, id_terceira_opcao, session.get('id'))
+    flash(f'Conta criada com sucesso! Seja bem-vindo, representante {nome_fantasia}!', 'sucesso')
     return redirect(url_for('geral.index'))
 
-@candidato_bp.route('/excluir_candidato/<int:id>')
-@verificar_fase(['Candidatura'])
-@verificar_login(requer_login=False)
-@verificar_tipo_usuario(['admin','candidato'])
-def excluir_candidato(id):
-    banco.execute_non_query("UPDATE candidatos SET status = 'Inativo' WHERE id = %s", id)
+@empresa_bp.route('/cadastrar-vaga/<int:id>/<int:curso>/<int:quantidade>')
+@verificar_login(requer_login=True)
+@verificar_tipo_usuario(['empresa'])
+def cadastrar_vaga(id, curso, quantidade):
+    obj = Vaga()
+    
+    obj.id_curso = curso
+    obj.id_empresa = id
+    obj.quantidade = quantidade
+
+    banco.execute_non_query("INSERT INTO vagas (id_curso, id_empresa, quantidade) VALUES (%s, %s, %s)", obj.id_curso, obj.id_empresa, obj.quantidade)
+    return '', 204
+
+@empresa_bp.route('/editar-vaga/<int:id>/<int:curso>/<int:quantidade>')
+@verificar_login(requer_login=True)
+@verificar_tipo_usuario(['empresa'])
+def editar_vaga(id, curso, quantidade):
+    obj = Vaga()
+    
+    obj.id_curso = curso
+    obj.quantidade = quantidade
+    obj.id_empresa = id
+
+    banco.execute_non_query("UPDATE vagas SET id_curso = %s, quantidade = %s WHERE id_empresa = %s)", obj.id_curso, obj.quantidade, obj.id_empresa)
+    return '', 204
+
+@empresa_bp.route('/excluir-vaga/<int:id_vaga>/')
+@verificar_login(requer_login=True)
+@verificar_tipo_usuario(['empresa'])
+def excluir_vaga(id_vaga):
+    banco.execute_non_query("UPDATE vagas SET status = 'Inativo' WHERE id = %s", id_vaga)
+    return '', 204
+
+@empresa_bp.route('/marcar-candidato/<int:id>')
+@verificar_login(requer_login=True)
+@verificar_tipo_usuario(['empresa'])
+def marcar_candidato(id):
+    dados = banco.execute_query("SELECT * FROM recrutamento WHERE id_empresa = %s AND id_candidato = %s", session.get('id'), id)
+    if not dados:
+        banco.execute_non_query("INSERT INTO recrutamento (id_candidato, id_empresa, relacao) VALUES (%s, %s, 'Marcado')", id, session.get('id'))
+    elif dados[0]['relacao'] == 'Marcado':
+        banco.execute_non_query("DELETE FROM recrutamento WHERE id_candidato = %s and id_empresa = %s", id, session.get('id'))
+    return '', 204
+
+@empresa_bp.route('/selecionar-candidato/<int:id>')
+@verificar_fase(['Selecao'])
+@verificar_login(requer_login=True)
+@verificar_tipo_usuario(['empresa'])
+def selecionar_candidato(id):
+    dados = banco.execute_query("SELECT * FROM recrutamento WHERE id_empresa = %s AND id_candidato = %s", session.get('id'), id)
+    if not dados:
+        banco.execute_non_query("INSERT INTO recrutamento (id_candidato, id_empresa, relacao) VALUES (%s, %s, 'Marcado')", id, session.get('id'))
+        banco.execute_non_query("UPDATE candidatos SET disponibilidade = 'Indisponível' WHERE id = %s", id)
+    elif dados[0]['relacao'] == 'Marcado':
+        banco.execute_non_query("UPDATE recrutamento SET relacao = 'Selecionado' WHERE id_candidato = %s and id_empresa = %s", id, session.get('id'))
+        banco.execute_non_query("UPDATE candidatos SET disponibilidade = 'Indisponível' WHERE id = %s", id)
+    else:
+        banco.execute_non_query("DELETE FROM recrutamento WHERE id_candidato = %s and id_empresa = %s", id, session.get('id'))
+        banco.execute_non_query("UPDATE candidatos SET disponibilidade = 'Disponível' WHERE id = %s", id)
+    return '', 204
+
+@empresa_bp.route('/excluir-empresa/<int:id>')
+@verificar_fase(['Preparação'])
+@verificar_login(requer_login=True)
+@verificar_tipo_usuario(['admin','empresa'])
+def excluir_empresa(id):
+    banco.execute_non_query("UPDATE empresas SET status = 'Inativo' WHERE id = %s", id)
+    banco.execute_non_query("UPDATE vagas SET status = 'Inativo' WHERE id = %s", id)
     return '', 204

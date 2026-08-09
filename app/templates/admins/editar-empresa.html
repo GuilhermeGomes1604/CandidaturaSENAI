@@ -5,12 +5,11 @@
 {% block conteudo %}
     <div>
         <form id="form" action="{{ url_for('admin.cadastrar_admin') }}" method="POST">
-            <label for="imagem"></label><img id="foto-de-perfil" src="{{ url_for('static', filename='img/icone_avatar_padrao.png') }}" alt="Foto de Perfil">
+            <label for="imagem"></label><img id="foto-de-perfil" src="{{ url_for('geral.exibir_imagem_usuario') }}" alt="Foto de Perfil">
             <input id="imagem" name="imagem" type="file" accept="image/*" onchange="aplicarImagem(this)" hidden>
                 
-            <label>Nome:<input type="text" name="nome"></label>
-            <label>CPF:<input type="text" name="cpf" onchange="formatarCPF(this.value)"></label>
-            <label>Senha:<input id="senha" type="password" name="senha"><a id="alternar-visibilidade-senha" href="#" onclick="alternar-visibilidade-senha(event)"><img id="icone-visibilidade-senha" src="{{ url_for('static', filename='img/icone_olho_aberto.png') }}" alt="Mostrar Senha"></a></label>
+            <label>Nome:<input type="text" name="nome" value="{{ dados.nome }}"></label>
+            <label>CPF:<input type="text" name="cpf" value="{{ dados.cpf }}" onchange="formatarCPF(this.value)"></label>
 
             <button type="submit">Cadastrar</button>
         </form>
@@ -36,19 +35,6 @@
         cpf = cpf.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
         
         return cpf
-    }
-
-    function alternar-visibilidade-senha(event) {
-        if (event) event.preventDefault()
-        const input-senha = document.getElementById('senha')
-        const img = document.getElementById('icone-visibilidade-senha_')
-        if (input-senha.type === "password") {
-            input-senha.type = "text"
-            img.src = "{{ url_for('static', filename='img/icone_olho_fechado.png') }}"
-        } else {
-            input-senha.type = "password"
-            img.src = "{{ url_for('static', filename='img/icone_olho_aberto.png') }}"
-        }
     }
 
     document.getElementById('form').addEventListener('submit', function(event) { 

@@ -1,86 +1,108 @@
-{% extends 'base.html' %}
+{% extends 'base-login.html' %}
 
-{% block title %}Login{% endblock %}
+{% block title %}{{ candidato.nome }}{% endblock %}
 
-{% block main %}
+{% block conteudo %}
+    <div>
+        <img src="{{ url_for('geral.exibir_imagem_candidato', id = candidato.id) }}" alt="Foto de perfil de {{ candidato.nome }}">
+        <p>ID: <span>{{ candidato.id }}</span></p>
+        <h3>Nome: <span>{{ candidato.nome }}</span></h3>
+        {% if nome_social %}
+            <h3>Nome Social: <span>{{ candidato.nome_social }}</span></h3>
+        {% endif %}
+        <p>CPF: <span>{{ candidato.cpf }}</span></p>
+        <p>Data de Nascimento: <span>{{ candidato.data_nasc }}</span></p>
+        <p>Idade: <span>{{ candidato.idade }} anos</span></p>
+        <p>Gênero: <span>{{ candidato.genero }}</span></p>
 
-    <h1>Candidatura SENAI</h1>
-    <h2>Login</h2>
-    <div id="container">
-        <form id="form" action="{{ url_for('geral.login') }}" method="POST">
-            <label for="">CPF/CNPJ:</label>
-            <input type="text" name="login" maxlength="18" placeholder="Digite seu CPF/CNPJ" onkeyup="this.value=formatarCPFCNPJ(this.value)" required>
+        <div>
+            <h4>Endereço</h4>
+            <p>CEP: <span>{{ candidato.cep }}</span></p>
+            <p>Endereço: <span>{{ candidato.endereco }}</span></p>
+            <p>Número: <span>{{ candidato.numero }}</span></p>
+            <p>Complemento: <span>{{ candidato.complemento }}</span></p>
+            <p>Bairro: <span>{{ candidato.bairro }}</span></p>
+            <p>Cidade: <span>{{ candidato.cidade }}</span></p>
+            <p>Estado: <span>{{ candidato.estado }}</span></p>
+        </div>
 
-            <label for="">Senha:</label>
-            <input id="inputSenha" type="password" name="senha" placeholder="Digite sua senha" required>
-            <a id="alternarVisibilidadeSenha" href="#" onclick="alternarVisibilidadeSenha(event)"><img id="icone_visibilidade_senha" src="{{ url_for('static', filename='img/icone_olho_aberto.png') }}" alt="Mostrar Senha"></a>
-            
-            <a href="{{ url_for('geral.esqueci_senha') }}">Esqueci minha senha</a>
+        <div>
+            <h4>E-mails</h4>
+            {% for email in emails %}
+                <p>{{ email.email }}</p>
+            {% endfor %}
 
-            <div class="form-buttons">
-                <button type="reset" class="btn-secundario">Limpar</button>
-                <button type="submit" class="btn-primario">Entrar</button>
+            <h4>Telefones</h4>
+            {% for telefone in telefones %}
+                <p>
+                    {{ telefone.numero }}
+                    {% if telefone.preferencia_contato == 'Ambos'%}
+                        {% set preferencia = "Ligação e WhatsApp" %}
+                    {% else %}
+                        {% set preferencia = telefone.preferencia_contato %}
+                    {% endif %}
+                    Preferência de Contato: {{ preferencia }}
+                    Tratar com: {{ telefone.nome_contato }}
+                </p>
+            {% endfor %}
+        </div>
+
+        <p>Escolaridade: <span>{{ candidato.vagas }}</span></p>
+        <p>Período de Estudo: <span>{{ candidato.detalhamento }}</span></p>
+        <p>Já estudou no SENAI: <span>{{ candidato.ja_estudou }}</span></p>
+        {% if candidato.disponibilidade == "Disponível" %}
+            <p>Disponível: <span>Sim<span></p>
+            <div>
+                {% if cursos_selecionados | length == 1 %}
+                    <h4>Curso Selecionados</h4>
+                {% else %}
+                    <h4>Cursos Selecionados</h4>
+                {% endif %}
+                {% for curso in cursos_selecionados %}
+                    <p>{{ loop.index }}ª Opção: <span>{{ curso.nome }} ({{ curso.sigla }})</span></p>
+                {% endfor %}
             </div>
-        </form>
-        <a href="{{ url_for('geral.cadastro') }}">Ainda não tem uma conta? Crie uma!</a>
+        {% else %}
+            <div>
+                <h4>Seleção</h4>
+                <p>Empresa: <span>{{ candidato.empresa }}</span></p>
+                <p>Detalhamento: <span>{{ candidato.detalhamento }}</span></p>
+            </div>
+        {% endif %}
+        <p>Data de Registro: <span>{{ candidato.data_registro }}</span></p>
+        
+        {% if session.get('tipo') == 'admin' %}
+            {% if session.get('fase') != 'Seleção' %}
+                <a href="{{ url_for('admin.edicao_candidato', id = candidato.id) }}">Editar Candidato</a>
+                <a onclick="excluirCandidato()">Excluir Candidato</a>
+            {% if %}
+        {% else %}
+            {% if session.get('fase') != 'Seleção' %}
+                <a href="{{ url_for('empresa.marcar_candidato', id = candidato.id) }}">Marcar com Interesse</a>
+            {% else %}
+                {% if not candidato.relacao %}
+                    <a onclick="fetch(`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Marcar com Interesse</a>
+                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Selecionar Candidato</a>
+                {% elif candidato.relacao == "Marcado" %}
+                    <a onclick="fetch(`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Desmarcar Candidato</a>
+                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Selecionar Candidato</a>
+                {% else %}
+                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`);fetch(`{{ url_for('geral.candidato', id = candidato.id) }}`)">Remover Seleção</a>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+
+        <a href="{{ url-for('geral.candidatos') }}">Ver Candidatos</a>
     </div>
 {% endblock %}
 
 <script>
-    document.getElementById('form').addEventListener('submit', function(event) {
-        const login = document.getElementsByName('login')
-        const senha = document.getElementsByName('senha')
-        const caracteresLogin = login.value.length
-        const caracteresSenha = senha.value.length
-        
-        if (caracteresLogin !== 14 && caracteresLogin !== 18) {
-            event.preventDefault()
-            alert("Insira um documento válido no campo de login.")
-            login.focus()
-        } else if (caracteresSenha == 0) {
-            event.preventDefault()
-            alert("Insira uma senha.")
-            senha.focus()
-        } else if (caracteresSenha < 8) {
-            event.preventDefault()
-            alert("A senha deve ser ter no mínimo 8 caracteres.")
-            senha.focus()
-        }
-    })
-
-    function formatarCPFCNPJ(login){
-        const caracteres = document.getElementsByName('login').value.length
-        login = login.replace(/\D/g, '')
-        if (caracteres <= 14) {
-            login = login.substring(0, 11)
-
-            login = login.replace(/\D/g,'')
-            login = login.replace(/(\d{3})(\d)/, '$1.$2')
-            login = login.replace(/(\d{3})(\d)/, '$1.$2')
-            login = login.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-        }
-        else {
-            login = login.substring(0, 14)
-
-            login = login.replace(/\D/g,'')
-            login = login.replace(/(\d{2})(\d)/, '$1.$2')
-            login = login.replace(/(\d{3})(\d)/, '$1.$2')
-            login = login.replace(/(\d{3})(\d)/, '$1/$2')
-            login = login.replace(/(\d{4})(\d)/, '$1-$2')
-        }
-        return login
-    }
-
-    function alternarVisibilidadeSenha(event) {
-        if (event) event.preventDefault()
-        const inputSenha = document.getElementById('inputSenha')
-        const img = document.getElementById('icone_visibilidade_senha_')
-        if (inputSenha.type === "password") {
-            inputSenha.type = "text"
-            img.src = "{{ url_for('static', filename='img/icone_olho_fechado.png') }}"
-        } else {
-            inputSenha.type = "password"
-            img.src = "{{ url_for('static', filename='img/icone_olho_aberto.png') }}"
+    
+    function excluirCandidato() {
+        let resposta = confirm("Deseja mesmo excluir esse candidato? Essa ação é irreversível.")
+        if (resposta) {
+            fetch(`{{ url_for('candidato.excluir_candidato', id = candidato.id) }}`)
+            window.location.href = (`{{ url_for('geral.cursos) }}`)
         }
     }
 </script>
