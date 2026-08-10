@@ -1,0 +1,105 @@
+{% extends 'base-login.html' %}
+
+{% block title %}Candidatos Marcados com Interesse{{ ' - ' ~ empresa if session.get('tipo') == 'admin' else '' }}{% endblock %}
+
+{% block conteudo %}
+    <div id="itens">
+        {% for candidato in candidatos %}
+            <a href="{{ url_for('geral.candidato', id = candidato.id) }}">
+                <div id="item-{{ loop.index }}" class="item-{{ classe }}">
+                    <img src="{{ url_for('geral.exibir_imagem_candidato', id = candidato.id) }}" alt="Foto de perfil de {{ candidato.nome }}">
+                    <p>ID: {{ candidato.id }} </p>
+                    <h4>{{ candidato.nome }}</h4>
+                    <p>{{ candidato.idade }} anos</p>
+                    <p>{{ candidato.escolaridade }}</p>
+                    {% if candidato.periodo_livre | length == 1 %}
+                        <p>{{ candidato.periodo_livre[0] }}</p>
+                    {% elif candidato.periodo_livre | length == 2 %}
+                        <p>{{ candidato.periodo_livre[0] }} e {{ candidato.periodo_livre[1] }}</p>
+                    {% else %}
+                        <p>{{ candidato.periodo_livre[0] }}, {{ candidato.periodo_livre[1] }} e {{ candidato.periodo_livre[2] }}</p>
+                    {% endif %}
+                    
+                    {% if not candidato.relacao %}
+                        <a class="btn-action" data-url="{{ url_for('empresa.marcar_candidato', id = candidato.id) }}">Marcar com Interesse</a>
+                        <a class="btn-action" data-url="{{ url_for('empresa.selecionar_candidato', id = candidato.id, nome = candidato.nome) }}" data-msg-extra="Insira os detalhes da seleção de {{ candidato.nome }}:">Selecionar Candidato</a>
+                    {% elif candidato.relacao == "Marcado" %}
+                        <a class="btn-action" data-url="{{ url_for('empresa.marcar_candidato', id = candidato.id) }}">Desmarcar Candidato</a>
+                        <a class="btn-action" data-url="{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}" data-msg-extra="Insira os detalhes da seleção de {{ candidato.nome }}:">Selecionar Candidato</a>
+                    {% else %}
+                        <a class="btn-action" data-url="{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}" data-msg-confirma="Deseja mesmo remover {{ candidato.nome }} dos seus candidatos selecionados?">Remover Seleção</a>
+                    {% endif %}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% endblock %}
+
+<script>
+    document.querySelectorAll('.btn-action').forEach(botao => {
+        botao.addEventListener('click', function(e) {
+            e.preventDefault()
+            e.stopPropagation()
+            
+            const url = this.getAttribute('data-url')
+            const msgConfirma = this.getAttribute('data-msg-confirma') || ''
+            const msgExtra = this.getAttribute('data-msg-extra') || ''
+            
+            if (msgConfirma) {
+                atualizarBotoesEmpresa(url, msgConfirma)
+            } else if (msgExtra) {
+                atualizarBotoesEmpresa(url, '', msgExtra)
+            } else {
+                atualizarBotoesEmpresa(url)
+            }
+        })
+    })
+    
+    function atualizarBotoesEmpresa(url,pergunta) {
+        if (pergunta) {
+            let resposta = confirm(pergunta)
+            if (resposta) {
+            } else {
+                return
+            }
+        } else {
+            fetch(url)
+            const item = document.createElement('a')
+
+            item.innerHTML = ''
+            item.innerHTML = `
+            <div id="item-\${index + 1}" class="item-\${classe}">
+                <img src="{{ url_for('geral.exibir_imagem_candidato', id = candidato.id) }}" alt="Foto de perfil de {{ candidato.nome }}">
+                <p>ID: {{ candidato.id }} </p>
+                <h4>{{ candidato.nome }}</h4>
+                <p>{{ candidato.idade }} anos</p>
+                <p>{{ candidato.escolaridade }}</p>
+                {% if candidato.periodo_livre | length == 1 %}
+                    <p>{{ candidato.periodo_livre[0] }}</p>
+                {% elif candidato.periodo_livre | length == 2 %}
+                    <p>{{ candidato.periodo_livre[0] }} e {{ candidato.periodo_livre[1] }}</p>
+                {% else %}
+                    <p>{{ candidato.periodo_livre[0] }}, {{ candidato.periodo_livre[1] }} e {{ candidato.periodo_livre[2] }}</p>
+                {% endif %}
+                <p>{{ candidato.data_registro }}</p>
+                
+                {% if session.get('tipo') == 'admin' %}
+                    <a href="{{ url_for('admin.edicao_candidato', id = candidato.id) }}>Editar</a>
+                    <a onclick="excluirCandidato()">Excluir</a>
+                {% else %}
+                    {% if not candidato.relacao %}
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}\`)">Marcar com Interesse</a>
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.selecionar_candidato', id = candidato.id, nome = candidato.nome) }}\`,'',\`Insira os detalhes da seleção de {{ candidato.nome }}:\`)">Selecionar Candidato</a>
+                    {% elif candidato.relacao == "Marcado" %}
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}\`)">Desmarcar Candidato</a>
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}\`,'',\`Insira os detalhes da seleção de {{ candidato.nome }}:\`)">Selecionar Candidato</a>
+                    {% else %}
+                        <a onclick="atualizarBotoesEmpresa(\`{{ url_for('empresa.selecionar_candidato', id = candidato.id') }}\`,\`Deseja mesmo remover {{ candidato.nome }} dos seus candidatos selecionados?\`)">Remover Seleção</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+            `
+
+        }
+    }
+</script>

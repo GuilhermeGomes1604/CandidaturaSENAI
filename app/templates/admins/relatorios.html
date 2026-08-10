@@ -1,0 +1,17 @@
+{% extends 'base-login.html' %}
+
+{% block title %}Requisições de restauração de senha{% endblock %}
+
+{% block conteudo %}
+    <div id="itens">
+        {% for relatorio in relatorios %}
+            <a href="geral./reports/relatorio_{{ relatorio.id }}.pdf" target="_blank">
+                <div>
+                    <p>ID: <span>{{ relatorio.id }}</span></p>
+                    <h3>Nome: <span>{{ relatorio.nome }}</span></h3>
+                    <p>Data de Registro: <span>{{ relatorio.data_registro }}</span></p>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% endblock %}
