@@ -1,0 +1,184 @@
+{% extends 'base-login.html' %}
+
+{% block title %}Cadastrar Empresa{% endblock %}
+
+{% block conteudo %}
+    <div>
+        <form id="form" action="{{ url_for('empresa.cadastrar_empresa') }}" method="POST">
+            <label for="imagem"></label><img id="foto-de-perfil" src="{{ url_for('static', filename='img/icone_avatar_padrao.png') }}" alt="Foto de Perfil">
+            <input id="imagem" name="imagem" type="file" accept="image/*" onchange="aplicarImagem(this)" hidden>
+
+            <label>Nome Fantasia:<input type="text" name="nome_fantasia" value="{{ session.get('nome_fantasia') }}"></label>
+            <label>Razão Social:<input type="text" name="razao_social"></label>
+            <label>CNPJ:<input type="text" name="cnpj" onchange="formatarCNPJ(this.value)" value="{{ session.get('cnpj') }}"></label>
+            <label>Senha:<input id="senha" type="password" name="senha" value="{{ session.get('senha') }}"><a id="alternar-visibilidade-senha" onclick="alternarVisibilidadeSenha(event)" style="cursor: pointer;"><img id="icone-visibilidade-senha" src="{{ url_for('static', filename='img/icone_olho_aberto.png') }}" alt="Mostrar Senha"></a></label>
+            <label>Nome do Responsável:<input type="text" name="nome_responsavel"></label>
+
+            <div>
+                <div>
+                    <h4>E-mails</h4>
+                    <label id="label-email1">E-mail:<input type="email" name="email1"></label>
+                    <label id="label-email2" hidden>Segundo e-mail:<input type="email" name="email2"></label>
+                    <label id="label-email3" hidden>Terceiro e-mail:<input type="email" name="email3"></label>
+                </div>
+                <div>
+                    <h4>Telefones</h4>
+                        <div id="telefone1">
+                        <label>Número:<input type="text" name="numero1"></label>
+                        <label>Tratar com:<input type="text" name="nome_contato1"></label>
+                        <input type="checkbox" id="ligacao1" name="ligacao1" value="ligacao" checked>
+                        <label for="ligacao1">Ligação</label>
+
+                        <input type="checkbox" id="whatsapp1" name="whatsapp1" value="whatsapp">
+                        <label for="whatsapp1">WhatsApp</label>
+                    </div>
+                    <div id="telefone2" hidden>
+                        <label>Número:<input type="text" name="numero2"></label>
+                        <label>Tratar com:<input type="text" name="nome_contato2"></label>
+
+                        <input type="checkbox" id="ligacao2" name="ligacao2" value="ligacao" checked>
+                        <label for="ligacao2">Ligação</label>
+
+                        <input type="checkbox" id="whatsapp2" name="whatsapp2" value="whatsapp">
+                        <label for="whatsapp2">WhatsApp</label>
+                    </div>
+                    <div id="telefone3" hidden>
+                        <label>Número:<input type="text" name="numero3"></label>
+                        <label>Tratar com:<input type="text" name="nome_contato3"></label>
+
+                        <input type="checkbox" id="ligacao3" name="ligacao3" value="ligacao" checked>
+                        <label for="ligacao3">Ligação</label>
+
+                        <input type="checkbox" id="whatsapp3" name="whatsapp3" value="whatsapp">
+                        <label for="whatsapp3">WhatsApp</label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit">Cadastrar-se</button>
+        </form>
+    </div>
+
+    <!-- O bloco de script foi movido para dentro do bloco conteudo -->
+    <script>
+        function aplicarImagem(input) {
+            if (input.files && input.files[0]) {
+                const arquivo = input.files[0]
+                const urlImagem = URL.createObjectURL(arquivo)
+                document.getElementById('foto-de-perfil').src = urlImagem
+            }
+        }
+        
+        function formatarCNPJ(cnpj){
+            cnpj = cnpj.replace(/\D/g, '')
+            cnpj = cnpj.substring(0, 14)
+
+            cnpj = cnpj.replace(/(\d{2})(\d)/, '$1.$2')
+            cnpj = cnpj.replace(/(\d{3})(\d)/, '$1.$2')
+            cnpj = cnpj.replace(/(\d{3})(\d)/, '$1/$2')
+            cnpj = cnpj.replace(/(\d{4})(\d)/, '$1-$2')
+            
+            // Adicionado para atualizar o valor no input, assim como nos de CPF e CEP anteriores
+            document.querySelector('input[name="cnpj"]').value = cnpj
+            return cnpj
+        }
+
+        function alternarVisibilidadeSenha(event) {
+            if (event) event.preventDefault()
+            const inputSenha = document.getElementById('senha')
+            // Removido o underline que estava gerando erro no JS
+            const img = document.getElementById('icone-visibilidade-senha')
+            if (inputSenha.type === "password") {
+                inputSenha.type = "text"
+                img.src = "{{ url_for('static', filename='img/icone_olho_fechado.png') }}"
+            } else {
+                inputSenha.type = "password"
+                img.src = "{{ url_for('static', filename='img/icone_olho_aberto.png') }}"
+            }
+        }
+
+        const e1 = document.querySelector('input[name="email1"]')
+        const e2 = document.querySelector('input[name="email2"]')
+        const e3 = document.querySelector('input[name="email3"]')
+        
+        const label2 = document.getElementById('label-email2')
+        const label3 = document.getElementById('label-email3')
+
+        function gerenciarEmails() {
+            if (e1.value === '') {
+                e1.value = e2.value
+                e2.value = e3.value
+                e3.value = ''
+            }
+        
+            if (e2.value === '') {
+                e2.value = e3.value
+                e3.value = ''
+            }
+
+            label2.hidden = (e1.value === '')
+            label3.hidden = (e2.value === '')
+        }
+
+        e1.addEventListener('input', gerenciarEmails)
+        e2.addEventListener('input', gerenciarEmails)
+        e3.addEventListener('input', gerenciarEmails)
+
+        const n1 = document.querySelector('input[name="numero1"]')
+        const n2 = document.querySelector('input[name="numero2"]')
+        const n3 = document.querySelector('input[name="numero3"]')
+        
+        const div2 = document.getElementById('telefone2')
+        const div3 = document.getElementById('telefone3')
+
+        function moverDados(origem, destino) {
+            document.querySelector(`input[name="numero${destino}"]`).value = document.querySelector(`input[name="numero${origem}"]`).value
+            document.querySelector(`input[name="nome_contato${destino}"]`).value = document.querySelector(`input[name="nome_contato${origem}"]`).value
+            
+            document.querySelector(`input[name="ligacao${destino}"]`).checked = document.querySelector(`input[name="ligacao${origem}"]`).checked
+            document.querySelector(`input[name="whatsapp${destino}"]`).checked = document.querySelector(`input[name="whatsapp${origem}"]`).checked
+        }
+
+        function limparDados(alvo) {
+            document.querySelector(`input[name="numero${alvo}"]`).value = ''
+            document.querySelector(`input[name="nome_contato${alvo}"]`).value = ''
+            document.querySelector(`input[name="ligacao${alvo}"]`).checked = true
+            document.querySelector(`input[name="whatsapp${alvo}"]`).checked = false
+        }
+
+        function gerenciarTelefones() {
+            if (n1.value === '') {
+                moverDados(2, 1)
+                moverDados(3, 2)
+                limparDados(3)
+            }
+            
+            if (n2.value === '') {
+                moverDados(3, 2)
+                limparDados(3)
+            }
+
+            div2.hidden = (n1.value === '')
+            div3.hidden = (n2.value === '')
+        }
+
+        n1.addEventListener('input', gerenciarTelefones)
+        n2.addEventListener('input', gerenciarTelefones)
+        n3.addEventListener('input', gerenciarTelefones)
+
+        document.getElementById('form').addEventListener('submit', function(event) { 
+            const camposObrigatorios = ['nome_fantasia', 'razao_social', 'cnpj', 'senha', 'nome_responsavel']
+
+            const temCampoVazio = camposObrigatorios.some(nome => {
+                const el = document.querySelector(`[name="${nome}"]`)
+                return !el || !el.value.trim()
+            })
+
+            if (temCampoVazio) {
+                event.preventDefault()
+                alert("Por favor, preencha todos os campos obrigatórios.")
+                return
+            }
+        })
+    </script>
+{% endblock %}

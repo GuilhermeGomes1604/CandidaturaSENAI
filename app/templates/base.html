@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% block titulo_completo %}
+            {% block title %}{% endblock %} | Candidatura SENAI
+        {% endblock %}
+    </title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container-mensagens">
+            {% for category, message in messages %}
+                <div class="alerta alerta-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main>
+        {% block main %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <img src="{{ url_for('static', filename='img/logo_senai.png') }}" alt="Logo do SENAI" class="footer-logo">
+            <div class="footer-info">
+                <p><strong>Sistema de Contratações de Candidatos</strong> &bull; SENAI Rio Claro &copy; 2026</p>
+                <p class="footer-credits">Desenvolvido por <strong>Guilherme de Campos Gomes</strong> &bull; Curso: Desenvolvimento de Sistemas (2DS)</p>
+                <p class="footer-credits">Orientação: Daniel Felipe Cerri e Eduardo Jorge</p>
+            </div>
+            <div class="footer-version">
+                <span>Versão:</span>
+                <span class="badge-version">0.9.0-demo</span>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>
+
+<div id="lgpd-popup" class="lgpd-container" style="display: none;">
+    <div class="lgpd-content">
+        <p>Nós usamos cookies e outras tecnologias para melhorar a sua experiência. Ao continuar navegando, você concorda com os nossos Termos de Uso e Política de Privacidade.</p>
+        <button id="btn-aceitar-lgpd" class="lgpd-btn">Entendi e Aceito</button>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const lgpdPopup = document.getElementById("lgpd-popup")
+        const btnAceitar = document.getElementById("btn-aceitar-lgpd")
+
+        if (!localStorage.getItem("lgpd_aceito")) {
+            lgpdPopup.style.display = "flex"
+        }
+
+        btnAceitar.addEventListener("click", function() {
+            localStorage.setItem("lgpd_aceito", "true")
+            lgpdPopup.style.display = "none"
+        })
+
+        const alertas = document.querySelectorAll(".alerta")
+        alertas.forEach(function(alerta) {
+            setTimeout(function() {
+                alerta.classList.add("saindo")
+                alerta.addEventListener("animationend", function() {
+                    alerta.remove()
+                })
+            }, 3000)
+        })
+    })
+</script>

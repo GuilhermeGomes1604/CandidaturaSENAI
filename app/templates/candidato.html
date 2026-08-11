@@ -1,0 +1,109 @@
+{% extends 'base-login.html' %}
+
+{% block title %}{{ candidato.nome }}{% endblock %}
+
+{% block conteudo %}
+    <div>
+        <img src="{{ url_for('geral.exibir_imagem_candidato', id = candidato.id) }}" alt="Foto de perfil de {{ candidato.nome }}">
+        <p>ID: <span>{{ candidato.id }}</span></p>
+        <h3>Nome: <span>{{ candidato.nome }}</span></h3>
+        {% if nome_social %}
+            <h3>Nome Social: <span>{{ candidato.nome_social }}</span></h3>
+        {% endif %}
+        <p>CPF: <span>{{ candidato.cpf }}</span></p>
+        <p>Data de Nascimento: <span>{{ candidato.data_nasc }}</span></p>
+        <p>Idade: <span>{{ candidato.idade }} anos</span></p>
+        <p>Gênero: <span>{{ candidato.genero }}</span></p>
+
+        <div>
+            <h4>Endereço</h4>
+            <p>CEP: <span>{{ candidato.cep }}</span></p>
+            <p>Endereço: <span>{{ candidato.endereco }}</span></p>
+            <p>Número: <span>{{ candidato.numero }}</span></p>
+            <p>Complemento: <span>{{ candidato.complemento }}</span></p>
+            <p>Bairro: <span>{{ candidato.bairro }}</span></p>
+            <p>Cidade: <span>{{ candidato.cidade }}</span></p>
+            <p>Estado: <span>{{ candidato.estado }}</span></p>
+        </div>
+
+        <div>
+            <h4>E-mails</h4>
+            {% for email in emails %}
+                <p>{{ email.email }}</p>
+            {% endfor %}
+
+            <h4>Telefones</h4>
+            {% for telefone in telefones %}
+                <p>
+                    {{ telefone.numero }}
+                    {% if telefone.preferencia_contato == 'Ambos'%}
+                        {% set preferencia = "Ligação e WhatsApp" %}
+                    {% else %}
+                        {% set preferencia = telefone.preferencia_contato %}
+                    {% endif %}
+                    Preferência de Contato: {{ preferencia }}
+                    Tratar com: {{ telefone.nome_contato }}
+                </p>
+            {% endfor %}
+        </div>
+
+        <p>Escolaridade: <span>{{ candidato.vagas }}</span></p>
+        <p>Período de Estudo: <span>{{ candidato.detalhamento }}</span></p>
+        <p>Já estudou no SENAI: <span>{{ candidato.ja_estudou }}</span></p>
+        {% if candidato.disponibilidade == "Disponível" %}
+            <p>Disponível: <span>Sim</span></p>
+            <div>
+                {% if cursos_selecionados | length == 1 %}
+                    <h4>Curso Selecionado</h4>
+                {% else %}
+                    <h4>Cursos Selecionados</h4>
+                {% endif %}
+                {% for curso in cursos_selecionados %}
+                    <p>{{ loop.index }}ª Opção: <span>{{ curso.nome }} ({{ curso.sigla }})</span></p>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div>
+                <h4>Seleção</h4>
+                <p>Empresa: <span>{{ candidato.empresa }}</span></p>
+                <p>Detalhamento: <span>{{ candidato.detalhamento }}</span></p>
+            </div>
+        {% endif %}
+        <p>Data de Registro: <span>{{ candidato.data_registro }}</span></p>
+        
+        {% if session.get('tipo') == 'admin' %}
+            {% if session.get('fase') != 'Seleção' %}
+                <a href="{{ url_for('admin.edicao_candidato', id = candidato.id) }}">Editar Candidato</a>
+                <a onclick="excluirCandidato()" style="cursor: pointer;">Excluir Candidato</a>
+            {% endif %}
+        {% else %}
+            {% if session.get('fase') != 'Seleção' %}
+                <a href="{{ url_for('empresa.marcar_candidato', id = candidato.id) }}">Marcar com Interesse</a>
+            {% else %}
+                {% if not candidato.relacao %}
+                    <a onclick="fetch(`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}`).then(() => window.location.reload())" style="cursor: pointer;">Marcar com Interesse</a>
+                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`).then(() => window.location.reload())" style="cursor: pointer;">Selecionar Candidato</a>
+                {% elif candidato.relacao == "Marcado" %}
+                    <a onclick="fetch(`{{ url_for('empresa.marcar_candidato', id = candidato.id) }}`).then(() => window.location.reload())" style="cursor: pointer;">Desmarcar Candidato</a>
+                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`).then(() => window.location.reload())" style="cursor: pointer;">Selecionar Candidato</a>
+                {% else %}
+                    <a onclick="fetch(`{{ url_for('empresa.selecionar_candidato', id = candidato.id) }}`).then(() => window.location.reload())" style="cursor: pointer;">Remover Seleção</a>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+
+        <a href="{{ url_for('geral.candidatos') }}">Ver Candidatos</a>
+    </div>
+
+    <script>
+        function excluirCandidato() {
+            let resposta = confirm("Deseja mesmo excluir esse candidato? Essa ação é irreversível.")
+            if (resposta) {
+                fetch(`{{ url_for('candidato.excluir_candidato', id = candidato.id) }}`)
+                .then(() => {
+                    window.location.href = "{{ url_for('geral.cursos') }}"
+                })
+            }
+        }
+    </script>
+{% endblock %}
