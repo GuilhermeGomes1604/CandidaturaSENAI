@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contratações - {{ empresa }}</title>
+</head>
+<body>
+    <div>
+        {% for candidato in candidatos %}
+            <div>
+                <h2>Nome: {{ candidato.nome }}</h2>
+                <p>CPF: {{ candidato.cpf }}</p>
+                <p>{{ candidato.idade }} anos</p>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

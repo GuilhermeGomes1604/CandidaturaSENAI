@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro{% endblock %}
+
+{% block main %}
+    <div class="titulos-login">
+        <h1>Candidatura SENAI</h1>
+        <h2>Cadastro</h2>
+    </div>
+    
+    <div id="container">
+        <form id="form" action="{{ url_for('geral.cadastro') }}" method="POST">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label for="input-nome">Nome:</label>
+                <input id="input-nome" type="text" name="nome" placeholder="Digite seu nome completo" required>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label for="input-login">CPF/CNPJ:</label>
+                <input id="input-login" type="text" name="login" maxlength="18" placeholder="Digite seu CPF/CNPJ" required onkeyup="this.value = formatarCPFCNPJ(this.value)">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label for="input-senha">Senha:</label>
+                <div class="senha-container">
+                    <input id="input-senha" type="password" name="senha" placeholder="Digite sua senha" required>
+                    <button type="button" id="alternar-visibilidade-senha" onclick="alternarVisibilidadeSenha(event)">
+                        <img id="icone-visibilidade-senha" src="{{ url_for('static', filename='img/icone_olho_aberto.png') }}" alt="Mostrar Senha">
+                    </button>
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="btn-primario">Cadastrar-se</button>
+            </div>
+        </form>
+        <a href="{{ url_for('geral.login') }}">Já tem uma conta? Acesse já!</a>
+    </div>
+
+    <script>
+        document.getElementById('form').addEventListener('submit', function(event) {
+            const nome = document.querySelector('input[name="nome"]')
+            const login = document.querySelector('input[name="login"]')
+            const senha = document.querySelector('input[name="senha"]')
+            
+            const valorNome = nome.value.trim() 
+            const caracteresLogin = login.value.length
+            const caracteresSenha = senha.value.length
+            
+            if (valorNome === "") {
+                event.preventDefault()
+                alert("Insira seu nome completo.")
+                nome.focus()
+            } else if (caracteresLogin !== 14 && caracteresLogin !== 18) {
+                event.preventDefault()
+                alert("Insira um CPF/CNPJ válido.")
+                login.focus()
+            } else if (caracteresSenha === 0) {
+                event.preventDefault()
+                alert("Insira uma senha.")
+                senha.focus()
+            } else if (caracteresSenha < 8) {
+                event.preventDefault()
+                alert("A senha deve ter no mínimo 8 caracteres.")
+                senha.focus()
+            }
+        })
+
+        function formatarCPFCNPJ(valor) {
+            valor = valor.replace(/\D/g, '')
+
+            if (valor.length <= 11) {
+                valor = valor.replace(/(\d{3})(\d)/, '$1.$2')
+                valor = valor.replace(/(\d{3})(\d)/, '$1.$2')
+                valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+            } else {
+                valor = valor.substring(0, 14) 
+                valor = valor.replace(/(\d{2})(\d)/, '$1.$2')
+                valor = valor.replace(/(\d{3})(\d)/, '$1.$2')
+                valor = valor.replace(/(\d{3})(\d)/, '$1/$2')
+                valor = valor.replace(/(\d{4})(\d)/, '$1-$2')
+            }
+            
+            return valor
+        }
+
+        function alternarVisibilidadeSenha(event) {
+            if (event) event.preventDefault()
+            const inputSenha = document.getElementById('input-senha')
+            const img = document.getElementById('icone-visibilidade-senha')
+            
+            if (inputSenha.type === "password") {
+                inputSenha.type = "text"
+                img.src = "{{ url_for('static', filename='img/icone_olho_fechado.png') }}"
+            } else {
+                inputSenha.type = "password"
+                img.src = "{{ url_for('static', filename='img/icone_olho_aberto.png') }}"
+            }
+        }
+    </script>
+{% endblock %}

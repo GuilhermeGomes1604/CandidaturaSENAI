@@ -1,0 +1,32 @@
+{% extends 'base-login.html' %}
+
+{% block title %}Fase do Sistema{% endblock %}
+
+{% block conteudo %}
+    <h1>Fase Atual: {{ session.get('fase') }}</h1>
+    <h2>Escolha a próxima fase:</h2>
+
+    {% if session.get('fase') == 'Preparação' %}
+        <button disabled>Preparação</button>
+    {% else %}
+        <button onclick="window.location.href='{{ url_for('admin.alterar_fase', fase='Preparação') }}'">Preparação</button>
+    {% endif %}
+
+    {% if session.get('fase') == 'Candidatura' %}
+        <button disabled>Candidatura</button>
+    {% else %}
+        <button onclick="window.location.href='{{ url_for('admin.alterar_fase', fase='Candidatura') }}'">Candidatura</button>
+    {% endif %}
+
+    {% if session.get('fase') == 'Seleção' %}
+        <button disabled>Seleção</button>
+    {% else %}
+        <button onclick="window.location.href='{{ url_for('admin.alterar_fase', fase='Seleção') }}'">Seleção</button>
+    {% endif %}
+
+    {% if session.get('fase') == 'Divulgação' %}
+        <button disabled>Divulgação</button>
+    {% else %}
+        <button onclick="window.location.href='{{ url_for('admin.alterar_fase', fase='Divulgação') }}'">Divulgação</button>
+    {% endif %}
+{% endblock %}

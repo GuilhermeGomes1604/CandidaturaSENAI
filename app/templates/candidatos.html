@@ -1,0 +1,402 @@
+{% extends 'base-login.html' %}
+
+{% block title %}Candidatos{% endblock %}
+
+{% block conteudo %}
+    <style>
+        #saudacao {
+            display: none !important;
+        }
+
+        #container-busca-filtros {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #fff;
+            padding: 24px;
+            margin: -24px -24px 32px -24px;
+            width: calc(100% + 48px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
+        
+        .busca-wrapper {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .busca-wrapper input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .busca-wrapper button {
+            padding: 0 20px;
+            background: var(--vermelho);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: filter 0.2s;
+        }
+
+        .busca-wrapper button:hover {
+            filter: brightness(0.85);
+        }
+        
+        .busca-wrapper button img {
+            width: 20px;
+            filter: brightness(0) invert(1);
+        }
+        
+        .filtros-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .filtros-wrapper select {
+            flex: 1;
+            min-width: 220px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #f9f9f9;
+            font-size: 0.95rem;
+        }
+
+        .filtros-wrapper select[multiple] {
+            height: 45px;
+            overflow: hidden;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .filtros-wrapper select[multiple]:focus {
+            height: auto;
+            min-height: 120px;
+            overflow-y: auto;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        #numero-resultados {
+            font-size: 1rem;
+            color: #666;
+            margin: 8px 0 0 0;
+            font-weight: 500;
+        }
+
+        #itens {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            width: 100%;
+        }
+
+        #itens a {
+            text-decoration: none !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            color: inherit;
+            display: block;
+            height: 100%;
+        }
+
+        .item-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            height: 100%;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none !important;
+            border-top: 4px solid var(--vermelho) !important;
+            box-sizing: border-box;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        .item-card img {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 16px;
+            border: 3px solid #f0f0f0;
+        }
+
+        .item-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 1.25rem;
+            color: #333;
+        }
+
+        .item-card p {
+            margin: 4px 0;
+            font-size: 0.95rem;
+            color: #666;
+        }
+
+        .item-card .periodo {
+            font-weight: 600;
+            color: var(--vermelho);
+            margin-top: 8px;
+        }
+
+        .botoes-acao {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            padding-top: 20px;
+        }
+
+        .botoes-acao a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background: #f0f0f0;
+            color: #333;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border: none !important;
+        }
+
+        .botoes-acao a:hover {
+            background: var(--vermelho);
+            color: #fff;
+        }
+        
+        .botoes-acao a.excluir {
+            background: #fff;
+            color: var(--vermelho);
+            border: 1px solid var(--vermelho) !important;
+        }
+
+        .botoes-acao a.excluir:hover {
+            background: var(--vermelho);
+            color: #fff;
+        }
+    </style>
+
+    <div id="container-busca-filtros">
+        <div class="busca-wrapper">
+            <input type="text" name="pesquisa" id="pesquisa" placeholder="Pesquise um candidato específico..." onchange="atualizarPagina()">
+            <button onclick="atualizarPagina()">
+                <img src="{{ url_for('static', filename='img/icone_pesquisar.png') }}" alt="Pesquisar">
+            </button>
+        </div>
+
+        <div class="filtros-wrapper">
+            <select name="situacao" id="situacao" onchange="atualizarPagina()">
+                <option value="Disponível" selected>Somente candidatos disponíveis para contratação</option>
+                <option value="">Todos os candidatos</option>
+            </select>
+
+            <select name="horario" id="horario" multiple onchange="atualizarPagina()">
+                <option value="" selected>Selecione horários de disponibilidade</option>
+                <option value="Manhã">Manhã</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noite">Noite</option>
+            </select>
+
+            {% if session.get('tipo') == 'admin' %}
+                <select name="cursos" id="cursos" multiple onchange="atualizarPagina()">
+                    {% for curso in cursos %}
+                        <option value="{{ curso.sigla }}">{{ curso.nome }} ({{ curso.sigla }})</option>
+                    {% endfor %}
+                </select>
+            {% else %}
+                <select name="tipo-cursos" id="tipo-cursos" onchange="atualizarPagina()">
+                    <option value="vagas" selected>Interessados nos cursos das suas vagas</option>
+                    <option value="">Interessados em todos os cursos</option>
+                </select>
+            {% endif %}
+        </div>
+
+        <h3 id="numero-resultados">Nenhum resultado encontrado</h3>
+    </div>
+
+    <div id="itens"></div>
+
+    <script>
+        const IDs = ['horario', 'cursos']
+
+        IDs.forEach(id => {
+            const elementoSelect = document.getElementById(id)
+            
+            if (!elementoSelect) return
+
+            elementoSelect.addEventListener('mousedown', function (e) {
+                e.preventDefault()
+                const clicada = e.target
+
+                if (clicada.tagName === 'OPTION' && !clicada.disabled) {
+                    clicada.selected = !clicada.selected
+                    
+                    const opcaoPadrao = elementoSelect.querySelector('option[value=""]');
+                    if (opcaoPadrao) {
+                        opcaoPadrao.disabled = true
+                        opcaoPadrao.selected = false
+                    }
+                    
+                    elementoSelect.dispatchEvent(new Event('change'))
+                }
+            })
+        })
+        
+        function atualizarPagina() {
+            const container = document.getElementById('itens')
+            let resultadosElemento = document.getElementById('numero-resultados')
+
+            const pesquisa = document.getElementById('pesquisa').value
+            const situacao = document.getElementById('situacao').value
+            
+            const horarios = [...document.getElementById('horario').selectedOptions].map(opcao => opcao.value).filter(v => v !== '')
+            
+            const elementoCursos = document.getElementById('cursos')
+            const cursos = elementoCursos ? [...elementoCursos.selectedOptions].map(opcao => opcao.value).filter(v => v !== '') : []
+            
+            const elementoTipoCursos = document.getElementById('tipo-cursos')
+            const tipoCursos = elementoTipoCursos ? [...elementoTipoCursos.selectedOptions].map(opcao => opcao.value).filter(v => v !== '') : []
+            
+            const urlBase = "{{ url_for('geral.api_dados_candidatos') }}"
+            const parametros = new URLSearchParams()
+
+            if (pesquisa) parametros.append('pesquisa', pesquisa)
+            if (situacao) parametros.append('situacao', situacao)
+            
+            horarios.forEach(turno => parametros.append('horarios', turno))
+            cursos.forEach(curso => parametros.append('cursos', curso))
+            tipoCursos.forEach(tipo => parametros.append('tipo-cursos', tipo))
+
+            const urlFinal = `${urlBase}?${parametros.toString()}`
+
+            fetch(urlFinal)
+            .then(response => {
+                if (!response.ok) throw new Error("Erro no servidor");
+                return response.json();
+            })
+            .then(dados => {
+                container.innerHTML = ''
+
+                if (!dados.candidatos || dados.candidatos.length == 0) {
+                    resultadosElemento.textContent = "Nenhum resultado encontrado."
+                    container.innerHTML = '<h3>Nenhum candidato encontrado com estes filtros.</h3>'
+                    return
+                } else if (dados.candidatos.length == 1) {
+                    resultadosElemento.textContent = "1 resultado encontrado."
+                } else {
+                    resultadosElemento.textContent = `${dados.candidatos.length} resultados encontrados.`
+                }
+
+                dados.candidatos.forEach((candidato, index) => {
+                    const item = document.createElement('a')
+                    let classe = candidato.status === 'Ativo' ? 'ativo' : 'inativo'
+                    let botoesAcao = ''
+
+                    if (classe === 'inativo' && "{{ session.get('tipo') }}" == 'empresa') {
+                        return
+                    }
+
+                    if ("{{ session.get('tipo') }}" == 'admin') {
+                        botoesAcao = `
+                            <a href="/admin/edicao_candidato/${candidato.id}">Editar</a>
+                            <a class="excluir" onclick="event.preventDefault(); excluirCandidato(${candidato.id}, '${candidato.nome}')" style="cursor: pointer;">Excluir</a>
+                        `
+                    } else {
+                        if (!candidato.relacao) {
+                            botoesAcao = `
+                                <a onclick="event.preventDefault(); atualizarBotoesEmpresa('/empresa/marcar_candidato/${candidato.id}')" style="cursor: pointer;">Marcar com Interesse</a>
+                                <a onclick="event.preventDefault(); atualizarBotoesEmpresa('/empresa/selecionar_candidato/${candidato.id}')" style="cursor: pointer;">Selecionar Candidato</a>
+                            `
+                        } else if (candidato.relacao == "Marcado") {
+                            botoesAcao = `
+                                <a onclick="event.preventDefault(); atualizarBotoesEmpresa('/empresa/marcar_candidato/${candidato.id}')" style="cursor: pointer;">Desmarcar Candidato</a>
+                                <a onclick="event.preventDefault(); atualizarBotoesEmpresa('/empresa/selecionar_candidato/${candidato.id}')" style="cursor: pointer;">Selecionar Candidato</a>
+                            `
+                        } else {
+                            botoesAcao = `
+                                <a class="excluir" onclick="event.preventDefault(); atualizarBotoesEmpresa('/empresa/selecionar_candidato/${candidato.id}', 'Deseja mesmo remover ${candidato.nome} dos seus candidatos selecionados?')" style="cursor: pointer;">Remover Seleção</a>
+                            `
+                        }
+                    }
+
+                    let periodoTexto = ''
+                    if (candidato.periodo_livre && candidato.periodo_livre.length > 0) {
+                        if (candidato.periodo_livre.length == 1) {
+                            periodoTexto = `<p class="periodo">${candidato.periodo_livre[0]}</p>`
+                        } else if (candidato.periodo_livre.length == 2) {
+                            periodoTexto = `<p class="periodo">${candidato.periodo_livre[0]} e ${candidato.periodo_livre[1]}</p>`
+                        } else {
+                            periodoTexto = `<p class="periodo">${candidato.periodo_livre[0]}, ${candidato.periodo_livre[1]} e ${candidato.periodo_livre[2]}</p>`
+                        }
+                    }
+
+                    item.id = `a-item-${candidato.id}`
+                    item.href = `/candidato/${candidato.id}`
+                    item.innerHTML = `
+                    <div id="item-${index + 1}" class="item-card item-${classe}">
+                        <img src="/geral/exibir_imagem_candidato/${candidato.id}" alt="Foto de perfil">
+                        <p style="font-size: 0.8rem; color: #999; margin: 0;">ID: ${candidato.id}</p>
+                        <h4>${candidato.nome}</h4>
+                        <p>${candidato.idade} anos</p>
+                        <p>${candidato.escolaridade}</p>
+                        ${periodoTexto}
+                        <p style="font-size: 0.8rem; margin-top: 12px; color: #999;">Registrado em: ${candidato.data_registro}</p>
+                        <div class="botoes-acao">
+                            ${botoesAcao}
+                        </div>
+                    </div>
+                    `
+                    container.appendChild(item)
+                })
+            })
+            .catch(erro => console.error(erro));
+        }
+
+        function excluirCandidato(id, nome) {
+            let resposta = confirm(`Deseja mesmo excluir a candidatura de ${nome}?`)
+            if (resposta) {
+                fetch(`/candidato/excluir_candidato/${id}`)
+                .then(() => {
+                    document.getElementById(`a-item-${id}`).remove()
+                    atualizarPagina()
+                })
+            }
+        }
+
+        function atualizarBotoesEmpresa(url, pergunta) {
+            if (pergunta) {
+                let resposta = confirm(pergunta)
+                if (!resposta) {
+                    return
+                }
+            } 
+            
+            fetch(url).then(() => atualizarPagina())
+        }
+
+        atualizarPagina()
+    </script>
+{% endblock %}
